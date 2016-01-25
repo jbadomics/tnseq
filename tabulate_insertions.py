@@ -49,6 +49,9 @@ intergenicHitsFile = open(intergenicHitsFileName, 'wb')
 
 CDS_list = []
 
+NtermTrim = int(sys.argv[4])
+CtermTrim = float(sys.argv[5])
+
 # parse input genbank file with SeqIO
 for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 	
@@ -61,6 +64,9 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			product = ''.join(feature.qualifiers["product"])
 			startCoord = int(feature.location.start.position)
 			endCoord = int(feature.location.end.position)
+			realStartCoord = int(startCoord + ((endCoord - startCoord) * NtermTrim))
+			realEndCoord = int(endCoord - ((endCoord - startCoord) * CtermTrim))
+			print '%i\t%i\t%i' % (startCoord, endCoord, realEndCoord)
 			
 			CDS_list.append((startCoord, endCoord))
 
@@ -69,13 +75,14 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			hits = []
 			
 			for insertionEvent in insertionEvents:
-				if startCoord <= int(insertionEvent[1]) <= endCoord:
+				if realStartCoord <= int(insertionEvent[1]) <= realEndCoord:
 					chromosome = insertionEvent[0]
 					hits.append(int(insertionEvent[2]))
 					insertionSites.append(insertionEvent[1])
 					coordinate = insertionEvent[1]
 				
-			if sum(hits) > 100:
+			#if sum(hits) > 100:
+			if hits:
 				codingHits = "%s\t%s\t%i\t%s" % (chromosome, locusTag, sum(hits), len(insertionSites))
 				outputFile.write(codingHits+"\n")
 			
