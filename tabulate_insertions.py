@@ -58,28 +58,40 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 	# loop over features in genbank file
 	for feature in sequenceRecord.features:
 	
-		if feature.type == 'CDS' or feature.type == 'tRNA' or feature.type == 'rRNA':
+		if feature.type == 'CDS' or feature.type == 'tRNA' or feature.type == 'rRNA' or feature.type == 'ncRNA':
 
 			locusTag = ''.join(feature.qualifiers["locus_tag"])
 			product = ''.join(feature.qualifiers["product"])
-			startCoord = int(feature.location.start.position)
-			endCoord = int(feature.location.end.position)
-			realStartCoord = int(startCoord + ((endCoord - startCoord) * NtermTrim))
-			realEndCoord = int(endCoord - ((endCoord - startCoord) * CtermTrim))
-			# print '%i\t%i\t%i' % (startCoord, endCoord, realEndCoord)
-			
-			CDS_list.append((startCoord, endCoord))
+			strand = int(feature.location.strand)
 
 			chromosome = []
 			insertionSites = []
 			hits = []
 			
 			for insertionEvent in insertionEvents:
-				if realStartCoord <= int(insertionEvent[1]) <= realEndCoord:
-					chromosome = insertionEvent[0]
-					hits.append(int(insertionEvent[2]))
-					insertionSites.append(insertionEvent[1])
-					coordinate = insertionEvent[1]
+				if strand == 1:
+					startCoord = int(feature.location.start.position)
+					endCoord = int(feature.location.end.position)
+					realStartCoord = int(round(startCoord + ((endCoord - startCoord) * NtermTrim)))
+					realEndCoord = int(round(endCoord - ((endCoord - startCoord) * CtermTrim)))
+					CDS_list.append((startCoord, endCoord))
+					if realStartCoord <= int(insertionEvent[1]) <= realEndCoord:
+						chromosome = insertionEvent[0]
+						hits.append(int(insertionEvent[2]))
+						insertionSites.append(insertionEvent[1])
+						coordinate = insertionEvent[1]
+				
+				if strand == -1:
+					startCoord = int(feature.location.end.position) #this is not a typo
+					endCoord = int(feature.location.start.position) #this is not a typo
+					realStartCoord = int(round(startCoord - ((startCoord - endCoord) * NtermTrim)))
+					realEndCoord = int(round(endCoord + ((startCoord - endCoord) * CtermTrim)))
+					CDS_list.append((endCoord, startCoord))
+					if realEndCoord <= int(insertionEvent[1]) <= realStartCoord:
+						chromosome = insertionEvent[0]
+						hits.append(int(insertionEvent[2]))
+						insertionSites.append(insertionEvent[1])
+						coordinate = insertionEvent[1]
 				
 			#if sum(hits) > 100:
 			if hits:
