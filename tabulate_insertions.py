@@ -66,7 +66,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			endCoord = int(feature.location.end.position)
 			realStartCoord = int(startCoord + ((endCoord - startCoord) * NtermTrim))
 			realEndCoord = int(endCoord - ((endCoord - startCoord) * CtermTrim))
-			print '%i\t%i\t%i' % (startCoord, endCoord, realEndCoord)
+			# print '%i\t%i\t%i' % (startCoord, endCoord, realEndCoord)
 			
 			CDS_list.append((startCoord, endCoord))
 
