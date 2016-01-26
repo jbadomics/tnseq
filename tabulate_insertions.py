@@ -53,8 +53,8 @@ intergenicHitsFile = open(intergenicHitsFileName, 'wb')
 
 CDS_list = []
 
-NtermTrim = sys.argv[4]
-CtermTrim = sys.argv[5]
+NtermTrim = float(sys.argv[4])
+CtermTrim = float(sys.argv[5])
 
 # parse input genbank file with SeqIO
 for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
