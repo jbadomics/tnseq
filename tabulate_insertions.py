@@ -17,11 +17,15 @@ warnings.simplefilter('ignore', BiopythonParserWarning)
 warnings.simplefilter('ignore', BiopythonWarning)
 
 # script help and usage
-# parser=argparse.ArgumentParser(
-    # description='This script parses a Genbank file and writes FASTA amino acid sequences (.faa) of putative multiheme\nc-type cytochromes (3 or more CXXCH motifs; if this qualification met, counts also CXXXCH motifs)\n\nNOTE: Organisms with multiple Genbank records (e.g. those with multiple chromosomes or plasmids)\nshould be concatenated into a single .gbk file before executing this script. For example:\n% cat NC_000001.gbk NC_000002.gbk [...NC_00000n.gbk] > concatenated.gbk\n\nRequires BioPython v. 1.65 or later (http://biopython.org/wiki/Download)', 
-    # epilog='Author: Jon Badalamenti, Bond Lab, University of Minnesota (http://www.thebondlab.org)\nJune 2015\n \n', formatter_class=RawTextHelpFormatter)
-# parser.add_argument('[GENBANK FILE]', help='Genbank file containing translated amino acid sequences. Requires SOURCE annotation\nto be present in the header. For example:\n \nLOCUS       NC_002939            3814128 bp    DNA     circular CON 16-MAY-2014\nDEFINITION  Geobacter sulfurreducens PCA chromosome, complete genome.\nACCESSION   NC_002939\nVERSION     NC_002939.5  GI:400756305\nDBLINK      BioProject: PRJNA57743\nKEYWORDS    RefSeq.\nSOURCE      Geobacter sulfurreducens PCA <--- *MUST BE PRESENT* \n  ORGANISM  Geobacter sulfurreducens PCA <--- *MUST BE PRESENT*')
-# args=parser.parse_args()
+parser=argparse.ArgumentParser(
+    description='Given a tab-delimited file providing genomic coordinates of transposon insertions, this script\nparses a Genbank file and tabulates the total number of transposon insertions and insertion sites\nper locus tag. It also tabulates intergenic insertions and locus tags without any insertions. \n\nNOTE: Organisms with multiple Genbank records (e.g. those with multiple chromosomes or plasmids)\nshould be concatenated into a single .gbk file before executing this script. For example:\n% cat NC_000001.gbk NC_000002.gbk [...NC_00000n.gbk] > concatenated.gbk\n\nRequires BioPython v. 1.65 or later (http://biopython.org/wiki/Download)', 
+    epilog='Author: Jon Badalamenti, Bond Lab, University of Minnesota (http://www.thebondlab.org)\nhttp://github.com/jbadomics/tnseq\nJanuary 2016\n \n', formatter_class=RawTextHelpFormatter)
+parser.add_argument('[GENBANK FILE]', help='Genbank file containing, at a minimum, locus tags and corresponding genomic\ncoordinates')
+parser.add_argument('[DATA FILE]', help='insertion data as three-column tab-delimited file containing chromosome,\ngenomic coordinate, and total number of insertions at that coordinate, e.g.\nchr1\t327491\t1639')
+parser.add_argument('[prefix]', help='output file names will be prepended with this prefix')
+parser.add_argument('[N-terminal trim]', type=float, help='percent (expressed as a decimal) of the total gene length to trim from the\nN-terminus of the translated protein')
+parser.add_argument('[C-terminal trim]', type=float, help='percent (expressed as a decimal) of the total gene length to trim from the\nC-terminus of the translated protein')
+args=parser.parse_args()
 
 # define input file handle
 genbankFile = open(sys.argv[1], 'r')
@@ -49,8 +53,8 @@ intergenicHitsFile = open(intergenicHitsFileName, 'wb')
 
 CDS_list = []
 
-NtermTrim = int(sys.argv[4])
-CtermTrim = float(sys.argv[5])
+NtermTrim = sys.argv[4]
+CtermTrim = sys.argv[5]
 
 # parse input genbank file with SeqIO
 for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
