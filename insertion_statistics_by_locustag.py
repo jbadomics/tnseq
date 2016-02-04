@@ -6,6 +6,7 @@ import csv
 import re
 import Bio
 from Bio import SeqIO, SeqFeature
+from Bio.SeqUtils import GC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 import argparse
@@ -92,8 +93,8 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					
 					for n in re.finditer('TA', geneSequence):
 						geneTAcoordinates.append(n.end() + realStartCoord)
-					print geneTAcoordinates
-					print 'tabulating insertions in %s - %s (+ strand, %i nt, %i aa, %i TA sites)...' % (locusTag, product, ntLength, aaLength, gene_TA_count)
+					#print geneTAcoordinates
+					print '%s %s [%i..%i(+), %i nt, %i aa, %i TA sites]...\n' % (locusTag, product, startCoord, endCoord, ntLength, aaLength, gene_TA_count)
 				
 				if strand == -1:
 					startCoord = int(feature.location.end.position) #this is not a typo
@@ -107,7 +108,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					for n in re.finditer('TA', geneSequence):
 						geneTAcoordinates.append(n.end() + realEndCoord)
 					#print geneTAcoordinates
-					print 'tabulating insertions in %s - %s (- strand, %i nt, %i aa, %i TA sites)...' % (locusTag, product, ntLength, aaLength, gene_TA_count)
+					print '%s %s [%i..%i(-), %i nt, %i aa, %i TA sites]...\n' % (locusTag, product, endCoord, startCoord, ntLength, aaLength, gene_TA_count)
 
 # raise error and exit script if provided locus tag does not exist
 try: matchedLocusTag
@@ -117,7 +118,8 @@ if matchedLocusTag == None:
 	print 'check the locus tag and try again'
 	sys.exit()
 
-totalSites = []
+totalGoodSites = []
+totalBadSites = []
 
 for insertionEvent in insertionEvents:
 	if strand and strand == 1:
@@ -126,9 +128,10 @@ for insertionEvent in insertionEvents:
 			numHits = insertionEvent[2]
 			insertionCoord = int(insertionEvent[1])
 			if insertionCoord in geneTAcoordinates:
-				totalSites.append(insertionEvent[1])
+				totalGoodSites.append(insertionCoord)
 				outputString = "%s\t%s\t%i\t%s\tTA site" % (chromosome, locusTag, insertionCoord, numHits)
 			else:
+				totalBadSites.append(insertionCoord)
 				outputString = "%s\t%s\t%i\t%s\t*" % (chromosome, locusTag, insertionCoord, numHits)
 			if numHits:
 				print outputString
@@ -140,21 +143,24 @@ for insertionEvent in insertionEvents:
 			numHits = insertionEvent[2]
 			insertionCoord = int(insertionEvent[1])
 			if insertionCoord in geneTAcoordinates:
-				totalSites.append(insertionEvent[1])
+				totalGoodSites.append('TA')
 				outputString = "%s\t%s\t%i\t%s\tTA site" % (chromosome, locusTag, insertionCoord, numHits)
 			else:
 				outputString = "%s\t%s\t%i\t%s\t*" % (chromosome, locusTag, insertionCoord, numHits)
+				totalBadSites.append(insertionCoord)
 			if numHits:
 				print outputString
 				outputFile.write(outputString+"\n")
 
-print '%s (%i bp) contains %i total theoretical TA insertion sites, of which' % (OrganismName, sum(totalGenomeLength), sum(totalTAsites))
-
-if totalSites:
-	print '%i total theoretical TA insertion sites are present in %s\n' % (gene_TA_count, locusTag)
-	print 'of these, %i sites in %s (%3.1f %%) were hit' % (len(totalSites), locusTag, (len(totalSites) / float(gene_TA_count)) * 100)
+if totalGoodSites:
+	print '%s (%i bp, %2.1f%% GC) contains %i total theoretical TA insertion sites' % (OrganismName, sum(totalGenomeLength), GC(genome), sum(totalTAsites))
+	print '%i total theoretical TA insertion sites are present in %s' % (gene_TA_count, locusTag)
+	print '%i of %i sites (%3.1f %%) in %s were hit' % (len(totalGoodSites), gene_TA_count, (len(totalGoodSites) / float(gene_TA_count)) * 100,locusTag)
 	print "insertion positions written to %s" % outputFileName
-if not totalSites:
+if totalBadSites and not totalGoodSites:
+	print '%i total theoretical TA insertion sites are present in %s' % (gene_TA_count, locusTag)
+	print 'insertions in %s occur only in non-TA sites' % locusTag
+if not totalGoodSites and not totalBadSites:
 	print "no transposon insertions occur in %s" % locusTag
 
 outputFile.close()
