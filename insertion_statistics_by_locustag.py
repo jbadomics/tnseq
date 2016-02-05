@@ -21,7 +21,7 @@ warnings.simplefilter('ignore', BiopythonWarning)
 
 # script help and usage
 parser=argparse.ArgumentParser(
-    description='Given 1) a tab-delimited file providing genomic coordinates of transposon insertions and\n2) a locus tag of interest, this script parses a Genbank file and tabulates the total number of\ntransposoninsertions for each insertion site within the genomic coordinates of the given locus tag.\n\nNOTE: Organisms with multiple Genbank records (e.g. those with multiple chromosomes or plasmids)\nshould be concatenated into a single .gbk file before executing this script. For example:\n% cat NC_000001.gbk NC_000002.gbk [...NC_00000n.gbk] > concatenated.gbk\n\nRequires BioPython v. 1.65 or later (http://biopython.org/wiki/Download)', 
+    description='Given 1) a tab-delimited file providing genomic coordinates of transposon insertions and\n2) a locus tag of interest, this script parses a Genbank file and tabulates the total number of\ntransposon insertions for each insertion site within the genomic coordinates of the given locus tag.\n\nNOTE: Organisms with multiple Genbank records (e.g. those with multiple chromosomes or plasmids)\nshould be concatenated into a single .gbk file before executing this script. For example:\n% cat NC_000001.gbk NC_000002.gbk [...NC_00000n.gbk] > concatenated.gbk\n\nRequires BioPython v. 1.65 or later (http://biopython.org/wiki/Download)', 
     epilog='Author: Jon Badalamenti, Bond Lab, University of Minnesota (http://www.thebondlab.org)\nhttp://github.com/jbadomics/tnseq\nFebruary 2016\n \n', formatter_class=RawTextHelpFormatter)
 parser.add_argument('[GENBANK FILE]', help='Genbank file containing, at a minimum, locus tags and corresponding genomic\ncoordinates')
 parser.add_argument('[DATA FILE]', help='insertion data as three-column tab-delimited file containing chromosome,\ngenomic coordinate, and total number of insertions at that coordinate, e.g.\nchr1\t327491\t1639')
@@ -47,7 +47,6 @@ NtermTrim = float(sys.argv[4])
 CtermTrim = float(sys.argv[5])
 
 outputFileName = "%s.insertions.txt" % sys.argv[3]
-outputFile = open(outputFileName, 'wb')
 
 totalTAsites = []
 totalGenomeLength = []
@@ -82,6 +81,8 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					ntLength = aaLength * 3
 				else:
 					print '%s is not a protein coding sequence' % locusTag
+					ntLength = abs(int(feature.location.start.position) - int(feature.location.end.position))
+					aaLength = 0
 
 				if strand == 1:
 					startCoord = int(feature.location.start.position)
@@ -94,7 +95,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					for n in re.finditer('TA', geneSequence):
 						geneTAcoordinates.append(n.end() + realStartCoord)
 					#print geneTAcoordinates
-					print '%s %s [%i..%i(+), %i nt, %i aa, %i TA sites]...\n' % (locusTag, product, startCoord, endCoord, ntLength, aaLength, gene_TA_count)
+					print '%s %s\t%i..%i(+), %i nt, %i aa, %i TA sites\n' % (locusTag, product, startCoord, endCoord, ntLength, aaLength, gene_TA_count)
 				
 				if strand == -1:
 					startCoord = int(feature.location.end.position) #this is not a typo
@@ -108,7 +109,9 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					for n in re.finditer('TA', geneSequence):
 						geneTAcoordinates.append(n.end() + realEndCoord)
 					#print geneTAcoordinates
-					print '%s %s [%i..%i(-), %i nt, %i aa, %i TA sites]...\n' % (locusTag, product, endCoord, startCoord, ntLength, aaLength, gene_TA_count)
+					print '%s %s\t%i..%i(-), %i nt, %i aa, %i TA sites\n' % (locusTag, product, endCoord, startCoord, ntLength, aaLength, gene_TA_count)
+
+genbankFile.close()
 
 # raise error and exit script if provided locus tag does not exist
 try: matchedLocusTag
@@ -120,6 +123,8 @@ if matchedLocusTag == None:
 
 totalGoodSites = []
 totalBadSites = []
+
+outputFile = open(outputFileName, 'wb')
 
 for insertionEvent in insertionEvents:
 	if strand and strand == 1:
@@ -161,7 +166,6 @@ if totalBadSites and not totalGoodSites:
 	print '%i total theoretical TA insertion sites are present in %s' % (gene_TA_count, locusTag)
 	print 'insertions in %s occur only in non-TA sites' % locusTag
 if not totalGoodSites and not totalBadSites:
-	print "no transposon insertions occur in %s" % locusTag
+	print "no transposon insertions found in %s" % locusTag
 
 outputFile.close()
-genbankFile.close()
