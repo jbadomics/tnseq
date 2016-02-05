@@ -95,7 +95,8 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					for n in re.finditer('TA', geneSequence):
 						geneTAcoordinates.append(n.end() + realStartCoord)
 					#print geneTAcoordinates
-					print '%s %s\t%i..%i(+), %i nt, %i aa, %i TA sites\n' % (locusTag, product, startCoord, endCoord, ntLength, aaLength, gene_TA_count)
+					TAdensity = gene_TA_count / (float(realEndCoord - realStartCoord) / 1000)
+					print '%s %s\t%i..%i(+), %i nt, %i aa, %i TA sites, %2.1f TA sites/kbp\n' % (locusTag, product, startCoord, endCoord, ntLength, aaLength, gene_TA_count, TAdensity)
 				
 				if strand == -1:
 					startCoord = int(feature.location.end.position) #this is not a typo
@@ -109,7 +110,8 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					for n in re.finditer('TA', geneSequence):
 						geneTAcoordinates.append(n.end() + realEndCoord)
 					#print geneTAcoordinates
-					print '%s %s\t%i..%i(-), %i nt, %i aa, %i TA sites\n' % (locusTag, product, endCoord, startCoord, ntLength, aaLength, gene_TA_count)
+					TAdensity = gene_TA_count / (float(realStartCoord - realEndCoord) / 1000)
+					print '%s %s\t%i..%i(-), %i nt, %i aa, %i TA sites, %2.1f TA sites/kbp\n' % (locusTag, product, endCoord, startCoord, ntLength, aaLength, gene_TA_count, TAdensity)
 
 genbankFile.close()
 
