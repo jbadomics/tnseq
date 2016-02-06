@@ -128,7 +128,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				noHits = "%s\t%s" % (locusTag, product)
 				noHitsFile.write(noHits+"\n")
 	
-	print 'tabulating intergenic insertions in %s %s" % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description))...'
+	print 'tabulating intergenic insertions in %s %s' % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description))...
 			
 	for i,pospair in enumerate(CDS_list[1:]):
 		last_end = CDS_list[i][1]
