@@ -4,8 +4,10 @@ import sys
 import os
 import csv
 import Bio
+import re
 from Bio import SeqIO, SeqFeature
 from Bio.SeqRecord import SeqRecord
+from Bio.SeqUtils import GC
 import argparse
 from argparse import RawTextHelpFormatter
 
@@ -57,9 +59,16 @@ NtermTrim = float(sys.argv[4])
 CtermTrim = float(sys.argv[5])
 
 # parse input genbank file with SeqIO
+
 for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
+	genome = sequenceRecord.seq
+	genomeSequence = str(sequenceRecord.seq)
+	TAcoordinates = []
+	totalTAsites = genome.count('TA')
+	for m in re.finditer('TA', genomeSequence):
+         TAcoordinates.append(m.end())
+	print "working on %s %s (%i bp, %2.2f%% GC, %i TA sites)" % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description).rstrip('.').replace(', complete genome', ''), len(genome), GC(genome), totalTAsites)
 	
-	# loop over features in genbank file
 	for feature in sequenceRecord.features:
 	
 		if feature.type == 'CDS' or feature.type == 'tRNA' or feature.type == 'rRNA' or feature.type == 'ncRNA':
@@ -67,30 +76,41 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			locusTag = ''.join(feature.qualifiers["locus_tag"])
 			product = ''.join(feature.qualifiers["product"])
 			strand = int(feature.location.strand)
+			
+			geneTAcoordinates = []
 
 			chromosome = []
 			insertionSites = []
 			hits = []
 			
-			for insertionEvent in insertionEvents:
-				if strand == 1:
-					startCoord = int(feature.location.start.position)
-					endCoord = int(feature.location.end.position)
-					realStartCoord = int(round(startCoord + ((endCoord - startCoord) * NtermTrim)))
-					realEndCoord = int(round(endCoord - ((endCoord - startCoord) * CtermTrim)))
-					CDS_list.append((startCoord, endCoord))
+			if strand == 1:
+				startCoord = int(feature.location.start.position)
+				endCoord = int(feature.location.end.position)
+				realStartCoord = int(round(startCoord + ((endCoord - startCoord) * NtermTrim)))
+				realEndCoord = int(round(endCoord - ((endCoord - startCoord) * CtermTrim)))
+				geneSequence = str(genome[realStartCoord:realEndCoord])
+				gene_TA_count = geneSequence.count('TA')
+				for n in re.finditer('TA', geneSequence):
+					geneTAcoordinates.append(n.end() + realStartCoord)
+				CDS_list.append((startCoord, endCoord))
+				for insertionEvent in insertionEvents:
 					if realStartCoord <= int(insertionEvent[1]) <= realEndCoord:
 						chromosome = insertionEvent[0]
 						hits.append(int(insertionEvent[2]))
 						insertionSites.append(insertionEvent[1])
 						coordinate = insertionEvent[1]
 				
-				if strand == -1:
-					startCoord = int(feature.location.end.position) #this is not a typo
-					endCoord = int(feature.location.start.position) #this is not a typo
-					realStartCoord = int(round(startCoord - ((startCoord - endCoord) * NtermTrim)))
-					realEndCoord = int(round(endCoord + ((startCoord - endCoord) * CtermTrim)))
-					CDS_list.append((endCoord, startCoord))
+			if strand == -1:
+				startCoord = int(feature.location.end.position) #this is not a typo
+				endCoord = int(feature.location.start.position) #this is not a typo
+				realStartCoord = int(round(startCoord - ((startCoord - endCoord) * NtermTrim)))
+				realEndCoord = int(round(endCoord + ((startCoord - endCoord) * CtermTrim)))
+				geneSequence = str(genome[realEndCoord:realStartCoord])
+				gene_TA_count = geneSequence.count('TA')
+				for n in re.finditer('TA', geneSequence):
+					geneTAcoordinates.append(n.end() + realEndCoord)
+				CDS_list.append((endCoord, startCoord))
+				for insertionEvent in insertionEvents:
 					if realEndCoord <= int(insertionEvent[1]) <= realStartCoord:
 						chromosome = insertionEvent[0]
 						hits.append(int(insertionEvent[2]))
@@ -99,7 +119,8 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				
 			#if sum(hits) > 100:
 			if hits:
-				codingHits = "%s\t%s\t%i\t%s" % (chromosome, locusTag, sum(hits), len(insertionSites))
+				codingHits = "%s\t%s\t%i\t%s\t%s\t%i" % (chromosome, locusTag, sum(hits), len(insertionSites), product, len(geneTAcoordinates))
+				#print codingHits
 				outputFile.write(codingHits+"\n")
 			
 			if not chromosome:
@@ -107,7 +128,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				noHits = "%s\t%s" % (locusTag, product)
 				noHitsFile.write(noHits+"\n")
 	
-	print 'tabulating intergenic insertions...'
+	print 'tabulating intergenic insertions in %s %s" % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description))...'
 			
 	for i,pospair in enumerate(CDS_list[1:]):
 		last_end = CDS_list[i][1]
