@@ -80,10 +80,12 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			geneTAcoordinates = []
 
 			chromosome = []
-			insertionSites = []
+			TAinsertionSites = []
+			nonTAsites = []
 			hits = []
 			
 			if strand == 1:
+				strandSign = '+'
 				startCoord = int(feature.location.start.position)
 				endCoord = int(feature.location.end.position)
 				realStartCoord = int(round(startCoord + ((endCoord - startCoord) * NtermTrim)))
@@ -94,13 +96,18 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					geneTAcoordinates.append(n.end() + realStartCoord)
 				CDS_list.append((startCoord, endCoord))
 				for insertionEvent in insertionEvents:
-					if realStartCoord <= int(insertionEvent[1]) <= realEndCoord:
-						chromosome = insertionEvent[0]
-						hits.append(int(insertionEvent[2]))
-						insertionSites.append(insertionEvent[1])
-						coordinate = insertionEvent[1]
+					chromosome = insertionEvent[0]
+					if chromosome == ''.join(sequenceRecord.id):
+						if realStartCoord <= int(insertionEvent[1]) <= realEndCoord:
+							hits.append(int(insertionEvent[2]))
+							coordinate = int(insertionEvent[1])
+							if coordinate in geneTAcoordinates:
+								TAinsertionSites.append(coordinate)
+							else:
+								nonTAsites.append(coordinate)
 				
 			if strand == -1:
+				strandSign = '-'
 				startCoord = int(feature.location.end.position) #this is not a typo
 				endCoord = int(feature.location.start.position) #this is not a typo
 				realStartCoord = int(round(startCoord - ((startCoord - endCoord) * NtermTrim)))
@@ -111,24 +118,32 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					geneTAcoordinates.append(n.end() + realEndCoord)
 				CDS_list.append((endCoord, startCoord))
 				for insertionEvent in insertionEvents:
-					if realEndCoord <= int(insertionEvent[1]) <= realStartCoord:
-						chromosome = insertionEvent[0]
-						hits.append(int(insertionEvent[2]))
-						insertionSites.append(insertionEvent[1])
-						coordinate = insertionEvent[1]
-				
-			#if sum(hits) > 100:
+					chromosome = insertionEvent[0]
+					if chromosome == ''.join(sequenceRecord.id):
+						if realEndCoord <= int(insertionEvent[1]) <= realStartCoord:
+							hits.append(int(insertionEvent[2]))
+							coordinate = int(insertionEvent[1])
+							if coordinate in geneTAcoordinates:
+								TAinsertionSites.append(coordinate)
+							else:
+								nonTAsites.append(coordinate)
+			
 			if hits:
-				codingHits = "%s\t%s\t%i\t%s\t%s\t%i" % (chromosome, locusTag, sum(hits), len(insertionSites), product, len(geneTAcoordinates))
-				#print codingHits
+				if len(geneTAcoordinates) > 0:
+					hitPercent = (float(len(TAinsertionSites)) / len(geneTAcoordinates)) * 100
+					codingHits = "%s\t%s\t%s\t%i\t%s\t%i\t%i\t%2.1f" % (chromosome, locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent)
+				else:
+					hitPercent = '*'
+					codingHits = "%s\t%s\t%s\t%i\t%s\t%i\t%i\t%s" % (chromosome, locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent)
+				# print codingHits
 				outputFile.write(codingHits+"\n")
 			
-			if not chromosome:
+			if not hits:
 				print "no transposon insertions in %s\t%s" % (locusTag, product)
 				noHits = "%s\t%s" % (locusTag, product)
 				noHitsFile.write(noHits+"\n")
 	
-	print 'tabulating intergenic insertions in %s %s' % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description))...
+	print 'tabulating intergenic insertions in %s %s...' % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description))
 			
 	for i,pospair in enumerate(CDS_list[1:]):
 		last_end = CDS_list[i][1]
