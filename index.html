@@ -9,7 +9,7 @@
         
         <link rel="shortcut icon" href="./img/favicon.ico">
 
-	<title>My Docs</title>
+	<title>Tn-seq</title>
 
         <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
         <link href="./css/font-awesome-4.5.0.css" rel="stylesheet">
@@ -35,7 +35,7 @@
             
 
             <!-- Main title -->
-            <a class="navbar-brand" href=".">My Docs</a>
+            <a class="navbar-brand" href=".">Tn-seq</a>
         </div>
 
         <!-- Expanded navigation -->
@@ -127,7 +127,7 @@ which bioawk
 <p>Finally, we need to install <a href="http://biopython.org/wiki/Main_Page">BioPython</a>:</p>
 <pre><code>sudo easy_install pip setuptools
 sudo pip install --upgrade pip setuptools
-sudo -H pip install [requests:security]
+sudo -H pip install pyopenssl ndg-httpsclient pyasn1
 sudo -H pip install biopython
 </code></pre>
 <h2 id="introduction-to-tn-seq">Introduction to Tn-seq</h2>
@@ -276,5 +276,5 @@ bowtie -q -p $(nproc --all) -S -n 0 -e 70 -l 28 --nomaqround -y -k 1 -a -m 1 --b
 
 <!--
 MkDocs version : 0.15.2
-Build Date UTC : 2016-02-08 19:51:17.048141
+Build Date UTC : 2016-02-08 19:56:40.740190
 -->
