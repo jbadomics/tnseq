@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import os
 from subprocess import call
 import csv
 import Bio
