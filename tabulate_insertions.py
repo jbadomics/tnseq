@@ -69,7 +69,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 	totalTAsites = genome.count('TA')
 	for m in re.finditer('TA', genomeSequence):
          TAcoordinates.append(m.end())
-	print "working on %s %s (%i bp, %2.2f%% GC, %i TA sites)" % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description).rstrip('.').replace(', complete genome', ''), len(genome), GC(genome), totalTAsites)
+	print "working on %s %s (%i bp, %2.2f%% GC, %i TA sites)...\n" % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description).rstrip('.').replace(', complete genome', ''), len(genome), GC(genome), totalTAsites)
 	
 	for feature in sequenceRecord.features:
 	
@@ -80,8 +80,6 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			strand = int(feature.location.strand)
 			
 			geneTAcoordinates = []
-
-			chromosome = []
 			TAinsertionSites = []
 			nonTAsites = []
 			hits = []
@@ -133,10 +131,10 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			if hits:
 				if len(geneTAcoordinates) > 0:
 					hitPercent = (float(len(TAinsertionSites)) / len(geneTAcoordinates)) * 100
-					codingHits = "%s\t%s\t%s\t%i\t%s\t%i\t%i\t%2.1f" % (chromosome, locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent)
+					codingHits = "%s\t%s\t%s\t%i\t%s\t%i\t%i\t%2.1f\t%s" % (''.join(sequenceRecord.id), locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent, product)
 				else:
 					hitPercent = '*'
-					codingHits = "%s\t%s\t%s\t%i\t%s\t%i\t%i\t%s" % (chromosome, locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent)
+					codingHits = "%s\t%s\t%s\t%i\t%s\t%i\t%i\t%s\t%s" % (''.join(sequenceRecord.id), locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent, product)
 				# print codingHits
 				outputFile.write(codingHits+"\n")
 			
@@ -145,7 +143,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				noHits = "%s\t%s" % (locusTag, product)
 				noHitsFile.write(noHits+"\n")
 	
-	print 'tabulating intergenic insertions in %s %s...' % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description).rstrip('.').replace(', complete genome', ''))
+	print 'tabulating intergenic insertions in %s %s...\n' % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description).rstrip('.').replace(', complete genome', ''))
 	
 	intergenicCoords = []			
 	for i in range(1, len(CDS_list) - 1):
@@ -158,12 +156,13 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 		end = int(coordPair[1])
 		if end - start >= 1:
 			for insertionEvent in insertionEvents:
-				if start < int(insertionEvent[1]) < end:
-					chromosome = insertionEvent[0]
-					hits = int(insertionEvent[2])
-					coordinate = insertionEvent[1]
-					intergenicHits = "%s\t%s\t%i" % (chromosome, coordinate, hits)
-					intergenicHitsFile.write(intergenicHits+"\n")
+				chromosome = insertionEvent[0]
+				if chromosome == ''.join(sequenceRecord.id):
+					if start < int(insertionEvent[1]) < end:
+						hits = int(insertionEvent[2])
+						coordinate = insertionEvent[1]
+						intergenicHits = "%s\t%s\t%i" % (chromosome, coordinate, hits)
+						intergenicHitsFile.write(intergenicHits+"\n")
 			
 print "...done"
 print "insertions in coding regions written to %s" % outputFileName
