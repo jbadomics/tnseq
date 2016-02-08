@@ -61,7 +61,7 @@ Finally, we need to install [BioPython](http://biopython.org/wiki/Main_Page):
 
     sudo easy_install pip setuptools
     sudo pip install --upgrade pip setuptools
-    sudo -H pip install [requests:security]
+    sudo -H pip install pyopenssl ndg-httpsclient pyasn1
     sudo -H pip install biopython
 
 ## Introduction to Tn-seq
