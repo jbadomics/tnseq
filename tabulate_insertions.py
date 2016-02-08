@@ -2,6 +2,7 @@
 
 import sys
 import os
+from subprocess import call
 import csv
 import Bio
 import re
@@ -29,9 +30,6 @@ parser.add_argument('[N-terminal trim]', type=float, help='percent (expressed as
 parser.add_argument('[C-terminal trim]', type=float, help='percent (expressed as a decimal) of the total gene length to trim from the\nC-terminus of the translated protein')
 args=parser.parse_args()
 
-# define input file handle
-genbankFile = open(sys.argv[1], 'r')
-
 insertionEvents=[]
 
 print "reading insertion data..."
@@ -54,12 +52,16 @@ intergenicHitsFileName = "%s.tabulated_insertions.intergenic.txt" % sys.argv[3]
 intergenicHitsFile = open(intergenicHitsFileName, 'wb')
 
 CDS_list = []
+with open(sys.argv[1], 'r') as f:
+    first_line = f.readline()
+    if 'circular' in first_line:
+		CDS_list.append([0,0])
 
 NtermTrim = float(sys.argv[4])
 CtermTrim = float(sys.argv[5])
 
 # parse input genbank file with SeqIO
-
+genbankFile = open(sys.argv[1], 'r')
 for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 	genome = sequenceRecord.seq
 	genomeSequence = str(sequenceRecord.seq)
@@ -94,7 +96,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				gene_TA_count = geneSequence.count('TA')
 				for n in re.finditer('TA', geneSequence):
 					geneTAcoordinates.append(n.end() + realStartCoord)
-				CDS_list.append((startCoord, endCoord))
+				CDS_list.append([startCoord, endCoord])
 				for insertionEvent in insertionEvents:
 					chromosome = insertionEvent[0]
 					if chromosome == ''.join(sequenceRecord.id):
@@ -116,7 +118,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				gene_TA_count = geneSequence.count('TA')
 				for n in re.finditer('TA', geneSequence):
 					geneTAcoordinates.append(n.end() + realEndCoord)
-				CDS_list.append((endCoord, startCoord))
+				CDS_list.append([endCoord, startCoord])
 				for insertionEvent in insertionEvents:
 					chromosome = insertionEvent[0]
 					if chromosome == ''.join(sequenceRecord.id):
@@ -143,23 +145,24 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				noHits = "%s\t%s" % (locusTag, product)
 				noHitsFile.write(noHits+"\n")
 	
-	print 'tabulating intergenic insertions in %s %s...' % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description))
-			
-	for i,pospair in enumerate(CDS_list[1:]):
-		last_end = CDS_list[i][1]
-		this_start = pospair[0]
-		if this_start - last_end >= 1:
-			chromosome = []
-			insertionSites = []
-			hits = []
-			intergenicHits = []
+	print 'tabulating intergenic insertions in %s %s...' % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description).rstrip('.').replace(', complete genome', ''))
+	
+	intergenicCoords = []			
+	for i in range(1, len(CDS_list) - 1):
+		last_end = CDS_list[i-1][1]
+		this_start = CDS_list[i][0]
+		intergenicCoords.append([last_end, this_start])
+	
+	for coordPair in intergenicCoords:
+		start = int(coordPair[0])
+		end = int(coordPair[1])
+		if end - start >= 1:
 			for insertionEvent in insertionEvents:
-				if last_end < int(insertionEvent[1]) < this_start:
+				if start < int(insertionEvent[1]) < end:
 					chromosome = insertionEvent[0]
-					hits.append(int(insertionEvent[2]))
-					insertionSites.append(insertionEvent[1])
+					hits = int(insertionEvent[2])
 					coordinate = insertionEvent[1]
-					intergenicHits = "%s\t%s\t%i" % (chromosome, coordinate, sum(hits))
+					intergenicHits = "%s\t%s\t%i" % (chromosome, coordinate, hits)
 					intergenicHitsFile.write(intergenicHits+"\n")
 			
 print "...done"
