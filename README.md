@@ -51,18 +51,23 @@ Install [bowtie2](http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6
 Make sure `bash` knows where we've installed our packages:
 
     echo 'PATH=~:$PATH' >> ~/.bashrc
-    echo 'PATH=~/sw:$PATH' >> ~/.bashrc
-    echo 'PATH=~/sw/samtools-1.2:$PATH' >> ~/.bashrc
-    echo 'PATH=~/sw/bowtie2-2.2.6:$PATH' >> ~/.bashrc
+    echo 'PATH=/sw:$PATH' >> ~/.bashrc
+    echo 'PATH=/sw/samtools-1.2:$PATH' >> ~/.bashrc
+    echo 'PATH=/sw/bowtie2-2.2.6:$PATH' >> ~/.bashrc
     source ~/.bashrc
     which bioawk
 
-Finally, we need to install [BioPython](http://biopython.org/wiki/Main_Page):
+We also need to install [BioPython](http://biopython.org/wiki/Main_Page):
 
     sudo easy_install pip setuptools
     sudo pip install --upgrade pip setuptools
-    sudo -H pip install [requests:security]
+    sudo -H pip install pyopenssl ndg-httpsclient pyasn1
     sudo -H pip install biopython
+
+Finally, clone the lesson repo into your home directory:
+
+    cd ~
+    git clone https://github.com/jbadomics/tnseq.git
 
 ## Introduction to Tn-seq
 
