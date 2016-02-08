@@ -34,6 +34,7 @@ insertionEvents=[]
 
 print "reading insertion data..."
 
+# read insertion data into list
 with open(sys.argv[2], 'r') as f:
 	insertionPointsFile = csv.reader(f,delimiter='\t')	
 	for chromosome,coordinate,insertion in insertionPointsFile:
@@ -51,22 +52,21 @@ noHitsFile = open(noHitsFileName, 'wb')
 intergenicHitsFileName = "%s.tabulated_insertions.intergenic.txt" % sys.argv[3]
 intergenicHitsFile = open(intergenicHitsFileName, 'wb')
 
-CDS_list = []
-with open(sys.argv[1], 'r') as f:
-    first_line = f.readline()
-    if 'circular' in first_line:
-		CDS_list.append([0,0])
+# define list of CDS coordinates for calculating intergenic regions
+CDS_list = [[0,0]]
 
 NtermTrim = float(sys.argv[4])
 CtermTrim = float(sys.argv[5])
 
-# parse input genbank file with SeqIO
+# parse input genbank file with SeqIO and loop over all sequence records
 genbankFile = open(sys.argv[1], 'r')
 for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 	genome = sequenceRecord.seq
 	genomeSequence = str(sequenceRecord.seq)
 	TAcoordinates = []
 	totalTAsites = genome.count('TA')
+	
+	# collect coordinates of all TA sites in the genome
 	for m in re.finditer('TA', genomeSequence):
          TAcoordinates.append(m.end())
 	print "working on %s %s (%i bp, %2.2f%% GC, %i TA sites)...\n" % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description).rstrip('.').replace(', complete genome', ''), len(genome), GC(genome), totalTAsites)
@@ -84,19 +84,24 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			nonTAsites = []
 			hits = []
 			
+			# deal with strand-specific coordinate definitions
 			if strand == 1:
 				strandSign = '+'
 				startCoord = int(feature.location.start.position)
 				endCoord = int(feature.location.end.position)
+				# correct coordinates based on positional arguments
 				realStartCoord = int(round(startCoord + ((endCoord - startCoord) * NtermTrim)))
 				realEndCoord = int(round(endCoord - ((endCoord - startCoord) * CtermTrim)))
 				geneSequence = str(genome[realStartCoord:realEndCoord])
 				gene_TA_count = geneSequence.count('TA')
+				# collect all TA sites in within corrected coordinates
 				for n in re.finditer('TA', geneSequence):
 					geneTAcoordinates.append(n.end() + realStartCoord)
+				# collect uncorrected coordinates in CDS_list for determining intergenic regions later
 				CDS_list.append([startCoord, endCoord])
 				for insertionEvent in insertionEvents:
 					chromosome = insertionEvent[0]
+					# essential test to match coordinates of seqRecord with the same chromosome in the input hits file
 					if chromosome == ''.join(sequenceRecord.id):
 						if realStartCoord <= int(insertionEvent[1]) <= realEndCoord:
 							hits.append(int(insertionEvent[2]))
@@ -108,17 +113,21 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				
 			if strand == -1:
 				strandSign = '-'
-				startCoord = int(feature.location.end.position) #this is not a typo
+				startCoord = int(feature.location.end.position) #this is not a typo - biopython defines start and end coordinates from left to right regardless of strandedness
 				endCoord = int(feature.location.start.position) #this is not a typo
+				# correct coordinates based on positional arguments
 				realStartCoord = int(round(startCoord - ((startCoord - endCoord) * NtermTrim)))
 				realEndCoord = int(round(endCoord + ((startCoord - endCoord) * CtermTrim)))
 				geneSequence = str(genome[realEndCoord:realStartCoord])
 				gene_TA_count = geneSequence.count('TA')
+				# collect all TA sites in within corrected coordinates
 				for n in re.finditer('TA', geneSequence):
 					geneTAcoordinates.append(n.end() + realEndCoord)
+				# collect uncorrected coordinates in CDS_list for determining intergenic regions later
 				CDS_list.append([endCoord, startCoord])
 				for insertionEvent in insertionEvents:
 					chromosome = insertionEvent[0]
+					# essential test to match coordinates of seqRecord with the same chromosome in the input hits file
 					if chromosome == ''.join(sequenceRecord.id):
 						if realEndCoord <= int(insertionEvent[1]) <= realStartCoord:
 							hits.append(int(insertionEvent[2]))
@@ -135,7 +144,6 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				else:
 					hitPercent = '*'
 					codingHits = "%s\t%s\t%s\t%i\t%s\t%i\t%i\t%s\t%s" % (''.join(sequenceRecord.id), locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent, product)
-				# print codingHits
 				outputFile.write(codingHits+"\n")
 			
 			if not hits:
@@ -145,22 +153,28 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 	
 	print 'tabulating intergenic insertions in %s %s...\n' % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description).rstrip('.').replace(', complete genome', ''))
 	
+	# define intergenic coordinates from CDS_list
 	intergenicCoords = []			
 	for i in range(1, len(CDS_list) - 1):
 		last_end = CDS_list[i-1][1]
 		this_start = CDS_list[i][0]
 		intergenicCoords.append([last_end, this_start])
 	
+	# loop over intergenic regions and report insertion statistics if length > 0
 	for coordPair in intergenicCoords:
 		start = int(coordPair[0])
 		end = int(coordPair[1])
 		if end - start >= 1:
 			for insertionEvent in insertionEvents:
 				chromosome = insertionEvent[0]
+				# essential test to match coordinates of seqRecord with the same chromosome in the input hits file
 				if chromosome == ''.join(sequenceRecord.id):
 					if start < int(insertionEvent[1]) < end:
 						hits = int(insertionEvent[2])
 						coordinate = insertionEvent[1]
+						# not sum(hits) here since intergenic ranges are not defined by locus tags
+						# rather, tabulate only by coordinate
+						# future improvement: collect and report information about flanking genes and their orientation
 						intergenicHits = "%s\t%s\t%i" % (chromosome, coordinate, hits)
 						intergenicHitsFile.write(intergenicHits+"\n")
 			
