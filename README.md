@@ -1,6 +1,6 @@
 # tnseq
 
-This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the [Bodega Bay 2016 bioinformatics course](link).
+This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the [Bodega Bay 2016 bioinformatics course](http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html).
 
 ## Learning objectives
 
@@ -16,15 +16,15 @@ Now let's install software:
 
     sudo apt-get update
     sudo apt-get -y upgrade
-    sudo apt-get -y install autoconf automake bison build-essential curl default-jdk \ default-jre expat fastqc fastx-toolkit  g++ gcc gfortran git libboost-all-dev libbz2-dev \ libffi-dev libncurses5-dev libpcre++-dev libpcre3-dev libpng-dev libqt4-dev \ libreadline-dev libssl-dev libxss1 make parallel python-dev python-setuptools seqtk \ trimmomatic unzip wget xdg-utils zlib1g-dev
+    sudo apt-get -y install autoconf automake bison build-essential curl default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc gfortran git libboost-all-dev libbz2-dev libffi-dev libncurses5-dev libpcre++-dev libpcre3-dev libpng-dev libqt4-dev libreadline-dev libssl-dev libxss1 make parallel python-dev python-setuptools seqtk trimmomatic unzip wget xdg-utils zlib1g-dev
 
-We will be using some other software packages that require manual installation. First, we'll install Heng Li's [bioawk](bioawk), an extension of the powerful GNU `awk` language which readily parses and manipulates common bioinformatics file formats like fastx and sam:
+We will be using some other software packages that require manual installation. First, we'll install Heng Li's [bioawk](https://github.com/lh3/bioawk), an extension of the powerful GNU `awk` language which readily parses and manipulates common bioinformatics file formats like fastx and sam:
 
     mkdir ~/sw && cd ~/sw
     git clone https://github.com/lh3/bioawk.git
     make
 
-Next, install [pullseq](pullseq). I've found it to be a really handy tool for grabbing reads from fastx files by name or by matching a regular expression:
+Next, install [pullseq](https://github.com/bcthomas/pullseq). I've found it to be a really handy tool for grabbing reads from fastx files by name or by matching a regular expression:
 
     git clone https://github.com/bcthomas/pullseq.git
     cd pullseq
@@ -33,7 +33,7 @@ Next, install [pullseq](pullseq). I've found it to be a really handy tool for gr
     make
     sudo make install
 
-Now let's install the latest version of [samtools](samtools):
+Now let's install [samtools](https://github.com/samtools/samtools/releases/tag/1.2) version 1.2:
 
     cd ~
     wget https://github.com/samtools/samtools/releases/download/1.2/samtools-1.2.tar.bz2
@@ -41,7 +41,7 @@ Now let's install the latest version of [samtools](samtools):
     cd samtools-1.2
     make
 
-Install [bowtie2](bowtie2):
+Install [bowtie2](http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/):
 
     wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
     unzip bowtie2-2.2.6-source.zip
@@ -57,7 +57,7 @@ Make sure `bash` knows where we've installed our packages:
     source ~/.bashrc
     which bioawk
 
-Finally, we need to install [BioPython](http://www.biopython.org):
+Finally, we need to install [BioPython](http://biopython.org/wiki/Main_Page):
 
     sudo easy_install pip setuptools
     sudo pip install --upgrade pip setuptools
