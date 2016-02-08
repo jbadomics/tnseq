@@ -1,2 +1,224 @@
 # tnseq
-documentation and scripts for analyzing Tn-seq data
+
+This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the [Bodega Bay 2016 bioinformatics course](link).
+
+## Learning objectives
+
+## Set up your Amazon instance and install dependencies
+
+Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. You will need to create a new private key if you do not already have one.
+
+When the instance becomes available, copy its address, open a Terminal and connect to it via ssh:
+
+    ssh -i keyfile.pem ubuntu@copy.address.here.amazonaws.com
+
+Now let's install software:
+
+    sudo apt-get update
+    sudo apt-get -y upgrade
+    sudo apt-get -y install autoconf automake bison build-essential curl default-jdk \ default-jre expat fastqc fastx-toolkit  g++ gcc gfortran git libboost-all-dev libbz2-dev \ libffi-dev libncurses5-dev libpcre++-dev libpcre3-dev libpng-dev libqt4-dev \ libreadline-dev libssl-dev libxss1 make parallel python-dev python-setuptools seqtk \ trimmomatic unzip wget xdg-utils zlib1g-dev
+
+We will be using some other software packages that require manual installation. First, we'll install Heng Li's [bioawk](bioawk), an extension of the powerful GNU `awk` language which readily parses and manipulates common bioinformatics file formats like fastx and sam:
+
+    mkdir ~/sw && cd ~/sw
+    git clone https://github.com/lh3/bioawk.git
+    make
+
+Next, install [pullseq](pullseq). I've found it to be a really handy tool for grabbing reads from fastx files by name or by matching a regular expression:
+
+    git clone https://github.com/bcthomas/pullseq.git
+    cd pullseq
+    ./bootstrap
+    ./configure
+    make
+    sudo make install
+
+Now let's install the latest version of [samtools](samtools):
+
+    cd ~
+    wget https://github.com/samtools/samtools/releases/download/1.2/samtools-1.2.tar.bz2
+    tar -xvjf samtools-1.2.tar.bz2
+    cd samtools-1.2
+    make
+
+Finally we'll install [bowtie2](bowtie2):
+
+    wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
+    unzip bowtie2-2.2.6-source.zip
+    cd bowtie2-2.2.6
+    make
+
+Make sure `bash` knows where we've installed our packages:
+
+    echo 'PATH=~:$PATH' >> ~/.bashrc
+    echo 'PATH=~/sw:$PATH' >> ~/.bashrc
+    echo 'PATH=~/sw/samtools-1.2:$PATH' >> ~/.bashrc
+    echo 'PATH=~/sw/bowtie2-2.2.6:$PATH' >> ~/.bashrc
+    source ~/.bashrc
+    which bioawk
+
+## Introduction to Tn-seq
+
+In this lesson, we'll be analyzing Tn-seq data from an environmental bacterium that we study in the [Bond Lab](http://thebondlab.org), *Geobacter sulfurreducens*. This organism is a model system for microbial metal reduction and extracellular electron transfer, since these microbes obtain metabolic energy by respiring insoluble metal oxides like Fe and Mn located outside the cell. Our lab is interested in identifying the proteins involved in this remarkable ability to transfer electrons across two insulating biological membranes.
+
+Tn-seq is a hypothesis-generating tool for identifying genes that provide fitness benefit under particular conditions. The procedure requires the following:
+
+1.  A genetically tractable model organism, and
+2.  its genome sequence.
+
+First, cells are randomly mutagenized with a suicide plasmid containing the Mariner transposon (which confers resistance to kanamycin). This transposon is flanked by inverted repeats and integrates into the chromosome at TA sites. A saturated mutant library is created by pooling a number of colonies roughly 10 times the number of genes in the genome. This number depends on two factors:
+
+*   genome size
+*   GC content (higher GC microbes inherently have fewer TA sites)
+
+The transposon mutant library we'll be looking at contains ~40,000 individual mutants. Some of them will have no phenotype; others will be lethal (i.e. the transposon insertion has interrupted an essential gene); or, the insertion will cause a fitness defect only under certain conditions.
+
+The entire mutant library is then subjected to two or more different outgrowth conditions, ideally for a known number of cell doublings (more on this later!). Assume a mutation at locus X, which causes a fitness defect under condition 1 but not condition 2. Over a few doubling events under condition 1, cells which carry the locus X mutation will be outcompeted and eventually die off; over the same period under condition 2, cells can continue to grow despite the locus X mutation. After outgrowth, genomic DNA is harvested and submitted for Illumina sequencing to locate the genomic position where the transposon inserted. In condition 1, very few (if any reads) will map, since the mutation caused a fitness defect, whereas in condition 2, more reads will map. Genes with the highest ratios of reads mapped can then be deleted and the phenotype can be verified.
+
+## Getting down to base-ics
+
+
+
+## Tn-seq data analysis workflow
+
+### Remove phiX reads
+
+In situations where Illumina reads are generated from the same DNA template (e.g. conserved regions of the 16S rRNA gene), it can be hard to differentiate clusters on the Illumina flow cell unless an external control is spiked into the sample, usually phage phiX DNA. Your sequencing provider may *say* they've removed phiX reads, but let's check just to be safe.
+
+We'll use bowtie2 to map our Tn-seq reads:
+
+    bowtie2-build phiX.fasta phiX
+    bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
+
+Have a look at the sam file:
+
+    less -S phiX.sam
+
+You'll notice that we have quite a few reads mapping to phiX. We should remove them from the dataset before we continue. pullseq to the rescue!
+
+    samtools view -f 4 phiX.sam | cut -f1 | pullseq -i Tn-seq.fastq -N - > phiX_removed.fastq
+
+Let's break this down: `samtools view` with `-f 4` collects any *unmapped* reads, in sam format. The first column contains the read IDs. These are piped into `pullseq` using `-N` which takes the read names from STDIN (`-n` if read IDs are in another file).
+
+In this lesson I included a shell script called `countseq` which runs `bioawk` to correctly count the number of sequences in any fastq or fasta file. Make sure that `phiX_removed.fastq` contains fewer reads than our raw data:
+
+    countseq *.fastq
+
+### Remove transposon sequence, filter, and dereplicate
+
+Use `less` to have a look at the phiX-removed reads. You should see some patterns: are there multiple barcodes? Do you see any TA insertion sites? Do the 3' ends of the reads look similar?
+
+Previous implementations of this workflow used `fastx_clipper`, part of the fastx toolkit, to remove transposon sequence at the 3' end of the read. Unfortunately this was painfully slow.
+
+Trimmomatic can do what we want, and is WAY faster. Rather than trim off Illumina adaptors, we can specify a custom file with our transposon sequence to trim:
+
+    java -Xmx28g -jar /panfs/roc/itascasoft/trimmomatic/0.33/trimmomatic.jar SE -phred33 \ phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq_adapter.fa:3:30:10 \ MINLEN:16
+
+Time to introduce the power of `bioawk`. I'm a huge fan of `bioawk`. We can use `awk`-like language to construct `if` statements, match regex patterns, and print reads meeting our criteria in either fasta or fastq format. In addition, `bioawk` automatically recognizes and parses these file formats (along with others like GFF and SAM) and assigns logical variables like `$seq` to describe the sequence and `$qual` to define the quality string.
+
+Now we need to discard any reads that did not contain transposon sequence. By this point in our workflow, these reads can be distinguished as still being full-length (51 bp):
+
+    bioawk -c fastx '{ if(length($seq) != 51) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.fastq > tn_removed.filtered.fastq
+
+Let's use bioawk again in a one-liner to capture a length distribution of the filtered reads:
+
+    bioawk -c fastx '{ print length($seq) }' tn_removed.filtered.fastq | sort | uniq -c
+
+As we expect, the overwhelming majority of our data is 20 or 21 bp. Keep in mind that the reads still contain barcode, which we'll remove shortly. But before we get to that, run bioawk to collect the reads of desired length:
+
+    bioawk -c fastx '{ if(length($seq) >= 19 && length($seq) < 23) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.fastq > tn_removed.filtered.length.fastq
+        
+Run a quick `countseq` to keep tabs of how many sequences we're discarding at each step:
+
+    countseq tn_removed*.fastq
+
+When we go to map reads against the reference genome, it is critical to keep tabs of the genomic position where the insertion occurred. Conceptually it makes sense to reverse complement the reads so that the TA insertion sequence occurs at the 5' end:
+
+    fastx_reverse_complement -i tn_removed.filtered.length.fastq -o tn_removed.filtered.length.rc.fastq
+
+What if a read doesn't begin with TA? This can happen sometimes, since the transposon does integrate at non-TA sites at ~2% frequency. We can safely remove the non-TA insertion reads with--you guessed it--bioawk:
+
+    bioawk -c fastx '{ if ($seq !~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq > \ tn_removed.filtered.length.rc.TAonly.fastq
+
+Just to be safe, let's write the reads that *don't* begin with TA to another file:
+
+    bioawk -c fastx '{ if ($seq !~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq > nonTA.fastq
+
+Take another peek at the reads with `less`: they should now all begin with TA and the barcode should now appear at the 3' end.
+
+Time to separate reads by barcode. This dataset uses 2 barcodes:
+
+```
+BC1	GACT
+BC2 CAGT
+```
+
+Note that some reads end with N. Bioawk and regular expressions to the rescue!
+
+    bioawk -c fastx '{ if ($seq ~ /GAC[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq > BC1.fastq
+
+Change the regex pattern and run the same command for BC2:
+
+    bioawk -c fastx '{ if ($seq ~ /CAG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq> BC2.fastq
+
+Make sure everything adds up:
+
+    countseq tn_removed*.fastq
+
+Now, remove the barcode on each dataset:
+
+    fastx_trimmer -t 4 -i BC1.fastq -o BC1_barcode_removed.fastq
+
+### Map reads and collect hit statistics
+
+Thinking ahead: when it comes time to tabulate the insertion coordinates by locus tag, the reference genome name and sequence need to match what we use to map reads to. **Unfortunately this isn't always the case.** The safest bet is to pull the genome sequence from the same Genbank file we'll use later for tabulating insertions. Run this little python script:
+
+    gbk_to_fasta.py Geobacter_sulfurreducens_MN1.gbk
+
+Now the fun can begin! Use bowtie2 to map reads:
+
+    bowtie2-build Geobacter_sulfurreducens_MN1.fasta MN1
+    for n in {1..3}; do bowtie2 -x MN1 -U BC$n.fastq -q -S BC$n.sam; done
+    bowtie -q -p $(nproc --all) -S -n 0 -e 70 -l 28 --nomaqround -y -k 1 -a -m 1 --best MN1 BC1_barcode_removed.fastq BC1.sam 
+
+Take a peek at the output sam files:
+
+    less -S BC1.sam
+    
+and look at a read that mapped to the reverse strand (look for bitwise flag 16). You'll notice that the read ends in TA, which it should if it mapped to the reverse strand, but the coordinate in column 4 refers to the *first* base aligned reading from left to right. This means we'll need to correct the coordinate for reads mapped to the minus strand so that they have the same coordinate (i.e. TA insertion site) as the forward read that arose from the same insertion event.
+
+How's this for a one-liner:
+
+    bioawk -c sam '{ if($flag==0) print $qname,$rname,$flag,$pos,$pos+1,length($seq); if($flag==16)  print $qname,$rname,$flag,$pos,$pos+length($seq)-1,length($seq) }' BC1.sam | cut -f2,5 | sort -g -k2 | uniq -c | sed 's/^ *//' | awk -v OFS='\t' '{ print $2,$3,$1}' > BC1.hits.txt
+
+Now have a look at `BC1.hits.txt`. It should be a tab-delimited text file with three columns:
+
+1.  the reference sequence ID (essential for multi-contig genomes)
+2.  the position along that reference
+3.  the total number of transposon insertions or "hits" at that position
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
