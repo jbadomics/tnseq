@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="./img/favicon.ico">
+
+	<title>My Docs</title>
+
+        <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="./css/font-awesome-4.5.0.css" rel="stylesheet">
+        <link href="./css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="./css/highlight.css">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body class="homepage">
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            
+
+            <!-- Main title -->
+            <a class="navbar-brand" href=".">My Docs</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            
+
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                        <i class="fa fa-search"></i> Search
+                    </a>
+                </li>
+                
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#tnseq">tnseq</a></li>
+        
+            <li><a href="#learning-objectives">Learning objectives</a></li>
+        
+            <li><a href="#set-up-your-amazon-instance-and-install-dependencies">Set up your Amazon instance and install dependencies</a></li>
+        
+            <li><a href="#introduction-to-tn-seq">Introduction to Tn-seq</a></li>
+        
+            <li><a href="#getting-down-to-base-ics">Getting down to base-ics</a></li>
+        
+            <li><a href="#tn-seq-data-analysis-workflow">Tn-seq data analysis workflow</a></li>
+        
+    
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h1 id="tnseq">tnseq</h1>
+<p>This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the <a href="http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html">Bodega Bay 2016 bioinformatics course</a>.</p>
+<h2 id="learning-objectives">Learning objectives</h2>
+<h2 id="set-up-your-amazon-instance-and-install-dependencies">Set up your Amazon instance and install dependencies</h2>
+<p>Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. You will need to create a new private key if you do not already have one.</p>
+<p>When the instance becomes available, copy its address, open a Terminal and connect to it via ssh:</p>
+<pre><code>ssh -i keyfile.pem ubuntu@copy.address.here.amazonaws.com
+</code></pre>
+<p>Now let's install software:</p>
+<pre><code>sudo apt-get update
+sudo apt-get -y upgrade
+sudo apt-get -y install autoconf automake bison build-essential curl default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc gfortran git libboost-all-dev libbz2-dev libffi-dev libncurses5-dev libpcre++-dev libpcre3-dev libpng-dev libqt4-dev libreadline-dev libssl-dev libxss1 make parallel python-dev python-setuptools seqtk trimmomatic unzip wget xdg-utils zlib1g-dev
+</code></pre>
+<p>We will be using some other software packages that require manual installation. First, we'll install Heng Li's <a href="https://github.com/lh3/bioawk">bioawk</a>, an extension of the powerful GNU <code>awk</code> language which readily parses and manipulates common bioinformatics file formats like fastx and sam:</p>
+<pre><code>mkdir ~/sw &amp;&amp; cd ~/sw
+git clone https://github.com/lh3/bioawk.git
+make
+</code></pre>
+<p>Next, install <a href="https://github.com/bcthomas/pullseq">pullseq</a>. I've found it to be a really handy tool for grabbing reads from fastx files by name or by matching a regular expression:</p>
+<pre><code>git clone https://github.com/bcthomas/pullseq.git
+cd pullseq
+./bootstrap
+./configure
+make
+sudo make install
+</code></pre>
+<p>Now let's install <a href="https://github.com/samtools/samtools/releases/tag/1.2">samtools</a> version 1.2:</p>
+<pre><code>cd ~
+wget https://github.com/samtools/samtools/releases/download/1.2/samtools-1.2.tar.bz2
+tar -xvjf samtools-1.2.tar.bz2
+cd samtools-1.2
+make
+</code></pre>
+<p>Install <a href="http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/">bowtie2</a>:</p>
+<pre><code>wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
+unzip bowtie2-2.2.6-source.zip
+cd bowtie2-2.2.6
+make
+</code></pre>
+<p>Make sure <code>bash</code> knows where we've installed our packages:</p>
+<pre><code>echo 'PATH=~:$PATH' &gt;&gt; ~/.bashrc
+echo 'PATH=~/sw:$PATH' &gt;&gt; ~/.bashrc
+echo 'PATH=~/sw/samtools-1.2:$PATH' &gt;&gt; ~/.bashrc
+echo 'PATH=~/sw/bowtie2-2.2.6:$PATH' &gt;&gt; ~/.bashrc
+source ~/.bashrc
+which bioawk
+</code></pre>
+<p>Finally, we need to install <a href="http://biopython.org/wiki/Main_Page">BioPython</a>:</p>
+<pre><code>sudo easy_install pip setuptools
+sudo pip install --upgrade pip setuptools
+sudo -H pip install [requests:security]
+sudo -H pip install biopython
+</code></pre>
+<h2 id="introduction-to-tn-seq">Introduction to Tn-seq</h2>
+<p>In this lesson, we'll be analyzing Tn-seq data from an environmental bacterium that we study in the <a href="http://thebondlab.org">Bond Lab</a>, <em>Geobacter sulfurreducens</em>. This organism is a model system for microbial metal reduction and extracellular electron transfer, since these microbes obtain metabolic energy by respiring insoluble metal oxides like Fe and Mn located outside the cell. Our lab is interested in identifying the proteins involved in this remarkable ability to transfer electrons across two insulating biological membranes.</p>
+<p>Tn-seq is a hypothesis-generating tool for identifying genes that provide fitness benefit under particular conditions. The procedure requires the following:</p>
+<ol>
+<li>A genetically tractable model organism, and</li>
+<li>its genome sequence.</li>
+</ol>
+<p>First, cells are randomly mutagenized with a suicide plasmid containing the Mariner transposon (which confers resistance to kanamycin). This transposon is flanked by inverted repeats and integrates into the chromosome at TA sites. A saturated mutant library is created by pooling a number of colonies roughly 10 times the number of genes in the genome. This number depends on two factors:</p>
+<ul>
+<li>genome size</li>
+<li>GC content (higher GC microbes inherently have fewer TA sites)</li>
+</ul>
+<p>The transposon mutant library we'll be looking at contains ~40,000 individual mutants. Some of them will have no phenotype; others will be lethal (i.e. the transposon insertion has interrupted an essential gene); or, the insertion will cause a fitness defect only under certain conditions.</p>
+<p>The entire mutant library is then subjected to two or more different outgrowth conditions, ideally for a known number of cell doublings (more on this later!). Assume a mutation at locus X, which causes a fitness defect under condition 1 but not condition 2. Over a few doubling events under condition 1, cells which carry the locus X mutation will be outcompeted and eventually die off; over the same period under condition 2, cells can continue to grow despite the locus X mutation. After outgrowth, genomic DNA is harvested and submitted for Illumina sequencing to locate the genomic position where the transposon inserted. In condition 1, very few (if any reads) will map, since the mutation caused a fitness defect, whereas in condition 2, more reads will map. Genes with the highest ratios of reads mapped can then be deleted and the phenotype can be verified.</p>
+<h2 id="getting-down-to-base-ics">Getting down to base-ics</h2>
+<h2 id="tn-seq-data-analysis-workflow">Tn-seq data analysis workflow</h2>
+<h3 id="remove-phix-reads">Remove phiX reads</h3>
+<p>In situations where Illumina reads are generated from the same DNA template (e.g. conserved regions of the 16S rRNA gene), it can be hard to differentiate clusters on the Illumina flow cell unless an external control is spiked into the sample, usually phage phiX DNA. Your sequencing provider may <em>say</em> they've removed phiX reads, but let's check just to be safe.</p>
+<p>We'll use bowtie2 to map our Tn-seq reads:</p>
+<pre><code>bowtie2-build phiX.fasta phiX
+bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
+</code></pre>
+<p>Have a look at the sam file:</p>
+<pre><code>less -S phiX.sam
+</code></pre>
+<p>You'll notice that we have quite a few reads mapping to phiX. We should remove them from the dataset before we continue. pullseq to the rescue!</p>
+<pre><code>samtools view -f 4 phiX.sam | cut -f1 | pullseq -i Tn-seq.fastq -N - &gt; phiX_removed.fastq
+</code></pre>
+<p>Let's break this down: <code>samtools view</code> with <code>-f 4</code> collects any <em>unmapped</em> reads, in sam format. The first column contains the read IDs. These are piped into <code>pullseq</code> using <code>-N</code> which takes the read names from STDIN (<code>-n</code> if read IDs are in another file).</p>
+<p>In this lesson I included a shell script called <code>countseq</code> which runs <code>bioawk</code> to correctly count the number of sequences in any fastq or fasta file. Make sure that <code>phiX_removed.fastq</code> contains fewer reads than our raw data:</p>
+<pre><code>countseq *.fastq
+</code></pre>
+<h3 id="remove-transposon-sequence-filter-and-dereplicate">Remove transposon sequence, filter, and dereplicate</h3>
+<p>Use <code>less</code> to have a look at the phiX-removed reads. You should see some patterns: are there multiple barcodes? Do you see any TA insertion sites? Do the 3' ends of the reads look similar?</p>
+<p>Previous implementations of this workflow used <code>fastx_clipper</code>, part of the fastx toolkit, to remove transposon sequence at the 3' end of the read. Unfortunately this was painfully slow.</p>
+<p>Trimmomatic can do what we want, and is WAY faster. Rather than trim off Illumina adaptors, we can specify a custom file with our transposon sequence to trim:</p>
+<pre><code>java -Xmx28g -jar /panfs/roc/itascasoft/trimmomatic/0.33/trimmomatic.jar SE -phred33 \ phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq_adapter.fa:3:30:10 \ MINLEN:16
+</code></pre>
+<p>Time to introduce the power of <code>bioawk</code>. I'm a huge fan of <code>bioawk</code>. We can use <code>awk</code>-like language to construct <code>if</code> statements, match regex patterns, and print reads meeting our criteria in either fasta or fastq format. In addition, <code>bioawk</code> automatically recognizes and parses these file formats (along with others like GFF and SAM) and assigns logical variables like <code>$seq</code> to describe the sequence and <code>$qual</code> to define the quality string.</p>
+<p>Now we need to discard any reads that did not contain transposon sequence. By this point in our workflow, these reads can be distinguished as still being full-length (51 bp):</p>
+<pre><code>bioawk -c fastx '{ if(length($seq) != 51) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.fastq &gt; tn_removed.filtered.fastq
+</code></pre>
+<p>Let's use bioawk again in a one-liner to capture a length distribution of the filtered reads:</p>
+<pre><code>bioawk -c fastx '{ print length($seq) }' tn_removed.filtered.fastq | sort | uniq -c
+</code></pre>
+<p>As we expect, the overwhelming majority of our data is 20 or 21 bp. Keep in mind that the reads still contain barcode, which we'll remove shortly. But before we get to that, run bioawk to collect the reads of desired length:</p>
+<pre><code>bioawk -c fastx '{ if(length($seq) &gt;= 19 &amp;&amp; length($seq) &lt; 23) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.fastq &gt; tn_removed.filtered.length.fastq
+</code></pre>
+<p>Run a quick <code>countseq</code> to keep tabs of how many sequences we're discarding at each step:</p>
+<pre><code>countseq tn_removed*.fastq
+</code></pre>
+<p>When we go to map reads against the reference genome, it is critical to keep tabs of the genomic position where the insertion occurred. Conceptually it makes sense to reverse complement the reads so that the TA insertion sequence occurs at the 5' end:</p>
+<pre><code>fastx_reverse_complement -i tn_removed.filtered.length.fastq -o tn_removed.filtered.length.rc.fastq
+</code></pre>
+<p>What if a read doesn't begin with TA? This can happen sometimes, since the transposon does integrate at non-TA sites at ~2% frequency. We can safely remove the non-TA insertion reads with--you guessed it--bioawk:</p>
+<pre><code>bioawk -c fastx '{ if ($seq !~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq &gt; \ tn_removed.filtered.length.rc.TAonly.fastq
+</code></pre>
+<p>Just to be safe, let's write the reads that <em>don't</em> begin with TA to another file:</p>
+<pre><code>bioawk -c fastx '{ if ($seq !~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq &gt; nonTA.fastq
+</code></pre>
+<p>Take another peek at the reads with <code>less</code>: they should now all begin with TA and the barcode should now appear at the 3' end.</p>
+<p>Time to separate reads by barcode. This dataset uses 2 barcodes:</p>
+<pre><code>BC1 GACT
+BC2 CAGT
+</code></pre>
+
+<p>Note that some reads end with N. Bioawk and regular expressions to the rescue!</p>
+<pre><code>bioawk -c fastx '{ if ($seq ~ /GAC[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq &gt; BC1.fastq
+</code></pre>
+<p>Change the regex pattern and run the same command for BC2:</p>
+<pre><code>bioawk -c fastx '{ if ($seq ~ /CAG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq&gt; BC2.fastq
+</code></pre>
+<p>Make sure everything adds up:</p>
+<pre><code>countseq tn_removed*.fastq
+</code></pre>
+<p>Now, remove the barcode on each dataset:</p>
+<pre><code>fastx_trimmer -t 4 -i BC1.fastq -o BC1_barcode_removed.fastq
+</code></pre>
+<h3 id="map-reads-and-collect-hit-statistics">Map reads and collect hit statistics</h3>
+<p>Thinking ahead: when it comes time to tabulate the insertion coordinates by locus tag, the reference genome name and sequence need to match what we use to map reads to. <strong>Unfortunately this isn't always the case.</strong> The safest bet is to pull the genome sequence from the same Genbank file we'll use later for tabulating insertions. Run this little python script:</p>
+<pre><code>gbk_to_fasta.py Geobacter_sulfurreducens_MN1.gbk
+</code></pre>
+<p>Now the fun can begin! Use bowtie2 to map reads:</p>
+<pre><code>bowtie2-build Geobacter_sulfurreducens_MN1.fasta MN1
+for n in {1..3}; do bowtie2 -x MN1 -U BC$n.fastq -q -S BC$n.sam; done
+bowtie -q -p $(nproc --all) -S -n 0 -e 70 -l 28 --nomaqround -y -k 1 -a -m 1 --best MN1 BC1_barcode_removed.fastq BC1.sam
+</code></pre>
+<p>Take a peek at the output sam files:</p>
+<pre><code>less -S BC1.sam
+</code></pre>
+<p>and look at a read that mapped to the reverse strand (look for bitwise flag 16). You'll notice that the read ends in TA, which it should if it mapped to the reverse strand, but the coordinate in column 4 refers to the <em>first</em> base aligned reading from left to right. This means we'll need to correct the coordinate for reads mapped to the minus strand so that they have the same coordinate (i.e. TA insertion site) as the forward read that arose from the same insertion event.</p>
+<p>How's this for a one-liner:</p>
+<pre><code>bioawk -c sam '{ if($flag==0) print $qname,$rname,$flag,$pos,$pos+1,length($seq); if($flag==16)  print $qname,$rname,$flag,$pos,$pos+length($seq)-1,length($seq) }' BC1.sam | cut -f2,5 | sort -g -k2 | uniq -c | sed 's/^ *//' | awk -v OFS='\t' '{ print $2,$3,$1}' &gt; BC1.hits.txt
+</code></pre>
+<p>Now have a look at <code>BC1.hits.txt</code>. It should be a tab-delimited text file with three columns:</p>
+<ol>
+<li>the reference sequence ID (essential for multi-contig genomes)</li>
+<li>the position along that reference</li>
+<li>the total number of transposon insertions or "hits" at that position</li>
+</ol></div>
+            
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            
+            <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+
+        <script src="./js/jquery-1.10.2.min.js"></script>
+        <script src="./js/bootstrap-3.0.3.min.js"></script>
+        <script src="./js/highlight.pack.js"></script>
+        <script>var base_url = '.';</script>
+        <script data-main="./mkdocs/js/search.js" src="./mkdocs/js/require.js"></script>
+        <script src="./js/base.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            From here you can search these documents. Enter
+                            your search terms below.
+                        </p>
+                        <form role="form">
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                            </div>
+                        </form>
+                        <div id="mkdocs-search-results"></div>
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>
+
+<!--
+MkDocs version : 0.15.2
+Build Date UTC : 2016-02-08 19:51:17.048141
+-->
