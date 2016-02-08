@@ -41,7 +41,7 @@ Now let's install the latest version of [samtools](samtools):
     cd samtools-1.2
     make
 
-Finally we'll install [bowtie2](bowtie2):
+Install [bowtie2](bowtie2):
 
     wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
     unzip bowtie2-2.2.6-source.zip
@@ -56,6 +56,13 @@ Make sure `bash` knows where we've installed our packages:
     echo 'PATH=~/sw/bowtie2-2.2.6:$PATH' >> ~/.bashrc
     source ~/.bashrc
     which bioawk
+
+Finally, we need to install [BioPython](http://www.biopython.org):
+
+    sudo easy_install pip setuptools
+    sudo pip install --upgrade pip setuptools
+    sudo -H pip install [requests:security]
+    sudo -H pip install biopython
 
 ## Introduction to Tn-seq
 
