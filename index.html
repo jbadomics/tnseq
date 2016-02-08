@@ -118,17 +118,21 @@ make
 </code></pre>
 <p>Make sure <code>bash</code> knows where we've installed our packages:</p>
 <pre><code>echo 'PATH=~:$PATH' &gt;&gt; ~/.bashrc
-echo 'PATH=~/sw:$PATH' &gt;&gt; ~/.bashrc
-echo 'PATH=~/sw/samtools-1.2:$PATH' &gt;&gt; ~/.bashrc
-echo 'PATH=~/sw/bowtie2-2.2.6:$PATH' &gt;&gt; ~/.bashrc
+echo 'PATH=/sw:$PATH' &gt;&gt; ~/.bashrc
+echo 'PATH=/sw/samtools-1.2:$PATH' &gt;&gt; ~/.bashrc
+echo 'PATH=/sw/bowtie2-2.2.6:$PATH' &gt;&gt; ~/.bashrc
 source ~/.bashrc
 which bioawk
 </code></pre>
-<p>Finally, we need to install <a href="http://biopython.org/wiki/Main_Page">BioPython</a>:</p>
+<p>We also need to install <a href="http://biopython.org/wiki/Main_Page">BioPython</a>:</p>
 <pre><code>sudo easy_install pip setuptools
 sudo pip install --upgrade pip setuptools
 sudo -H pip install pyopenssl ndg-httpsclient pyasn1
 sudo -H pip install biopython
+</code></pre>
+<p>Finally, clone the lesson repo into your home directory:</p>
+<pre><code>cd ~
+git clone https://github.com/jbadomics/tnseq.git
 </code></pre>
 <h2 id="introduction-to-tn-seq">Introduction to Tn-seq</h2>
 <p>In this lesson, we'll be analyzing Tn-seq data from an environmental bacterium that we study in the <a href="http://thebondlab.org">Bond Lab</a>, <em>Geobacter sulfurreducens</em>. This organism is a model system for microbial metal reduction and extracellular electron transfer, since these microbes obtain metabolic energy by respiring insoluble metal oxides like Fe and Mn located outside the cell. Our lab is interested in identifying the proteins involved in this remarkable ability to transfer electrons across two insulating biological membranes.</p>
@@ -276,5 +280,5 @@ bowtie -q -p $(nproc --all) -S -n 0 -e 70 -l 28 --nomaqround -y -k 1 -a -m 1 --b
 
 <!--
 MkDocs version : 0.15.2
-Build Date UTC : 2016-02-08 19:56:40.740190
+Build Date UTC : 2016-02-08 22:53:07.111278
 -->
