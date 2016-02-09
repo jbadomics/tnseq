@@ -120,9 +120,9 @@ But there's a problem: when it comes time to map reads, any read mapping to the 
 ```
 @HD	VN:1.0	SO:unsorted
 @SQ	SN:chr1	LN:3820884
-@PG	ID:bowtie2	PN:bowtie2	VN:2.2.6	CL:"/home/bonddr/badalame/Software/bowtie2-2.2.6/bowtie2-align-s --wrapper basic-0 -x MN1 -S test.sam -q -U simulated.fastq"
-HWI-ST1073:534:H5C2YADXX:1:1101:1118:1918	0	chr1	29	42	20M	*	0	0	TATGGAAGAAGTTTGGCTCC	DFEEEEIDDDDDDDDDDDDD	AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:20	YT:Z:UU
-HWI-ST1073:534:H5C2YADXX:1:1101:1138:1935	16	chr1	11	42	20M	*	0	0	TCCCGAGAAGGTCTGGTTTA	DDDDDDDDDDDDDIEEEEFD	AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:20	YT:Z:UU
+@PG	ID:bowtie2	PN:bowtie2	VN:2.2.6	CL:"bowtie2-align-s --wrapper basic-0 -x MN1 -S test.sam -q -U simulated.fastq"
+fwd_read	0	chr1	29	42	20M	*	0	0	TATGGAAGAAGTTTGGCTCC	DFEEEEIDDDDDDDDDDDDD
+rev_read	16	chr1	11	42	20M	*	0	0	TCCCGAGAAGGTCTGGTTTA	DDDDDDDDDDDDDIEEEEFD
 ```
 
 In column 4, we can see that the reverse read reports an alignment beginning at base 11, when in fact the TA site of insertion is at the end of the read. For this lesson, I define the coordinate of the TA site as the coordinate of the 'A' residue, which in this case is 30. We'll incorporate a step in our workflow to ensure that the forward and reverse reads arising from the same insertion event end up with an identical insertion coordinate reported.
@@ -140,7 +140,7 @@ First, create a data analysis directory:
 We'll use bowtie2 to map our Tn-seq reads:
 
     bowtie-build ~/tnseq/reference/phiX.fasta phiX
-    bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
+    bowtie -q -S -p $(nproc --all) phiX ~/data/tnseq_reads.fastq phiX.sam
 
 Have a look at the sam file:
 
@@ -152,11 +152,11 @@ You'll notice that we have quite a few reads mapping to phiX. We should remove t
 
 Let's break this down: `samtools view` with `-f 4` collects any *unmapped* reads, in sam format. The first column contains the read IDs. These are piped into `pullseq` using `-N` which takes the read names from STDIN (`-n` if read IDs are in another file).
 
-In this lesson repository I've also included a shell script called `countseq` which runs `bioawk` to correctly count the number of sequences in any fastq or fasta file. Make sure that `phiX_removed.fastq` contains fewer reads than our raw data:
+In this lesson repository I've also included a shell script called `countseq` which invokes `bioawk` to correctly count the number of sequences in any fastq or fasta file, and supports shell wildcard expansion. Make sure that `phiX_removed.fastq` contains fewer reads than our raw data:
 
     countseq *.fastq
 
-### Remove transposon sequence, filter, and dereplicate
+### Remove transposon sequence, filter, and separate reads by barcode
 
 Use `less` to have a look at the phiX-removed reads. You should see some patterns: are there multiple barcodes? Do you see any TA insertion sites? Do the 3' ends of the reads look similar?
 
@@ -202,8 +202,8 @@ Time to separate reads by barcode. This dataset uses 3 barcodes:
 
 ```
 BC1	CAGT parent 
-BC2 GACT low
-BC3 GTGT high
+BC2 GACT low potential electrode outgrowth
+BC3 GTGT high potential electrode outgrowth
 ```
 
 Note that some reads end with N. Bioawk and regular expressions to the rescue!
@@ -251,9 +251,22 @@ Now have a look at `BC1.hits.txt`. It should be a tab-delimited text file with t
 2.  the position along that reference
 3.  the total number of transposon insertions or "hits" at that position
 
+### Collect hit statistics by gene
+
+I am not a Python expert, but in this repo there are two scripts we'll use for converting our `.hits.txt` data by locus tag, using a Genbank file of the reference genome containing the annotation and coordinates of each gene feature.
+
+    mkdir tabulate && cd tabulate
+    tabulate_insertions.py ~/tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC1.hits.txt BC1 0 0.05
+
+The last two numbers specify a percentage to trim off the N- and C-terminus, respectively, of the coding sequence. In past analyses we only consider hits within the first 95% of the total gene length
+
+As the script runs, you'll see a scrolling output of genes that do not contain any TA site hits. What is significant about these genes?
+
 ### Calculate log2 ratios to identify genes of interest
 
-to be continued!
+Two particular loci should jump out at us: GSU0274 and GSU3259. These genes encode inner membrane cytochromes that function at low and high potential, respectively. So, in the BC2 library (low potential electrode outgrowth), we should see very few hits in GSU0274. Likewise, in the BC3 library, we should see very few hits in GSU3259.
+
+to be continued if time permits!
 
 
 
