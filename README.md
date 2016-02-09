@@ -4,7 +4,7 @@ This repository contains lesson materials, instructions, and scripts for analyzi
 
 **DISCLAIMER:** This lesson is written for the particular flavor of Tn-seq data generation and analysis that I am familiar with in my lab as described [here](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2958.2012.08196.x/abstract), but modifications to the general Tn-seq scheme exist. Also, keep in mind that, as was determined at #ngs2015
 
-![I am not a bioinformatician](not_a_bioinformatician.jpg)
+![I am not a bioinformatician](https://raw.github.com/jbadomics/tnseq/master/not_a_bioinformatician.jpg)
 
 ## Set up Amazon instance and install dependencies
 
