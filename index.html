@@ -79,7 +79,7 @@
             <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
     
-        <li class="main active"><a href="#tnseq">tnseq</a></li>
+        <li class="main active"><a href="#identifying-harmful-mutations-in-microbial-populations-with-tn-seq">Identifying harmful mutations in microbial populations with Tn-seq</a></li>
         
             <li><a href="#learning-objectives">Learning objectives</a></li>
         
@@ -96,7 +96,7 @@
 </div></div>
             <div class="col-md-9" role="main">
 
-<h1 id="tnseq">tnseq</h1>
+<h1 id="identifying-harmful-mutations-in-microbial-populations-with-tn-seq">Identifying harmful mutations in microbial populations with Tn-seq</h1>
 <p>This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the <a href="http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html">Bodega Bay 2016 bioinformatics course</a>.</p>
 <h2 id="learning-objectives">Learning objectives</h2>
 <h2 id="set-up-your-amazon-instance-and-install-dependencies">Set up your Amazon instance and install dependencies</h2>
@@ -110,33 +110,39 @@ sudo apt-get -y upgrade
 sudo apt-get -y install autoconf automake bison build-essential curl default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc gfortran git libboost-all-dev libbz2-dev libffi-dev libncurses5-dev libpcre++-dev libpcre3-dev libpng-dev libqt4-dev libreadline-dev libssl-dev libxss1 make parallel python-dev python-setuptools seqtk trimmomatic unzip wget xdg-utils zlib1g-dev
 </code></pre>
 <p>We will be using some other software packages that require manual installation. First, we'll install Heng Li's <a href="https://github.com/lh3/bioawk">bioawk</a>, an extension of the powerful GNU <code>awk</code> language which readily parses and manipulates common bioinformatics file formats like fastx and sam:</p>
-<pre><code>mkdir ~/sw &amp;&amp; cd ~/sw
+<pre><code>sudo mkdir /sw 
+sudo chown ubuntu /sw
+chmod 775 /sw
+cd /sw
 git clone https://github.com/lh3/bioawk.git
+cd bioawk
 make
 </code></pre>
 <p>Next, install <a href="https://github.com/bcthomas/pullseq">pullseq</a>. I've found it to be a really handy tool for grabbing reads from fastx files by name or by matching a regular expression:</p>
-<pre><code>git clone https://github.com/bcthomas/pullseq.git
+<pre><code>cd /sw
+git clone https://github.com/bcthomas/pullseq.git
 cd pullseq
 ./bootstrap
 ./configure
 make
 sudo make install
 </code></pre>
-<p>Now let's install <a href="https://github.com/samtools/samtools/releases/tag/1.2">samtools</a> version 1.2:</p>
-<pre><code>cd ~
+<p>Now let's install <a href="https://github.com/samtools/samtools/releases/tag/1.2">samtools</a> <a href="https://twitter.com/pathogenomenick/status/696409415302430721">version 1.2</a>:</p>
+<pre><code>cd /sw
 wget https://github.com/samtools/samtools/releases/download/1.2/samtools-1.2.tar.bz2
 tar -xvjf samtools-1.2.tar.bz2
 cd samtools-1.2
 make
 </code></pre>
 <p>Install <a href="http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/">bowtie2</a>:</p>
-<pre><code>wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
+<pre><code>cd /sw
+wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
 unzip bowtie2-2.2.6-source.zip
 cd bowtie2-2.2.6
 make
 </code></pre>
 <p>Make sure <code>bash</code> knows where we've installed our packages:</p>
-<pre><code>echo 'PATH=~:$PATH' &gt;&gt; ~/.bashrc
+<pre><code>echo 'PATH=~/tnseq/scripts:$PATH' &gt;&gt; ~/.bashrc
 echo 'PATH=/sw:$PATH' &gt;&gt; ~/.bashrc
 echo 'PATH=/sw/samtools-1.2:$PATH' &gt;&gt; ~/.bashrc
 echo 'PATH=/sw/bowtie2-2.2.6:$PATH' &gt;&gt; ~/.bashrc
