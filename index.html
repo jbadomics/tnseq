@@ -91,9 +91,7 @@
     
         <li class="main active"><a href="#identifying-harmful-mutations-in-microbial-populations-with-tn-seq">Identifying harmful mutations in microbial populations with Tn-seq</a></li>
         
-            <li><a href="#learning-objectives">Learning objectives</a></li>
-        
-            <li><a href="#set-up-your-amazon-instance-and-install-dependencies">Set up your Amazon instance and install dependencies</a></li>
+            <li><a href="#set-up-amazon-instance-and-install-dependencies">Set up Amazon instance and install dependencies</a></li>
         
             <li><a href="#introduction-to-tn-seq">Introduction to Tn-seq</a></li>
         
@@ -108,18 +106,18 @@
 
 <h1 id="identifying-harmful-mutations-in-microbial-populations-with-tn-seq">Identifying harmful mutations in microbial populations with Tn-seq</h1>
 <p>This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the <a href="http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html">Bodega Bay 2016 bioinformatics course</a>.</p>
-<h2 id="learning-objectives">Learning objectives</h2>
-<h2 id="set-up-your-amazon-instance-and-install-dependencies">Set up your Amazon instance and install dependencies</h2>
+<p><strong>DISCLAIMER:</strong> This lesson is written for the particular flavor of Tn-seq data generation and analysis that I am familiar with in my lab as described <a href="./Evan">here</a>, but modifications to the general Tn-seq scheme exist. Also:</p>
+<p><img alt="I am not a bioinformatician" src="./not_a_bioinformatician.jpg" /></p>
+<h2 id="set-up-amazon-instance-and-install-dependencies">Set up Amazon instance and install dependencies</h2>
 <p>Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. You will need to create a new private key if you do not already have one.</p>
 <p>When the instance becomes available, copy its address, open a Terminal and connect to it via ssh:</p>
 <pre><code>ssh -i keyfile.pem ubuntu@copy.address.here.amazonaws.com
 </code></pre>
 <p>Now let's install software:</p>
-<pre><code class="shell">sudo apt-get update
+<pre><code>sudo apt-get update
 sudo apt-get -y upgrade
-sudo apt-get -y install autoconf automake bison build-essential curl default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc gfortran git libboost-all-dev libbz2-dev libffi-dev libncurses5-dev libpcre++-dev libpcre3-dev libpng-dev libqt4-dev libreadline-dev libssl-dev libxss1 make parallel python-dev python-setuptools seqtk trimmomatic unzip wget xdg-utils zlib1g-dev
+sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
 </code></pre>
-
 <p>We will be using some other software packages that require manual installation. First, we'll install Heng Li's <a href="https://github.com/lh3/bioawk">bioawk</a>, an extension of the powerful GNU <code>awk</code> language which readily parses and manipulates common bioinformatics file formats like fastx and sam:</p>
 <pre><code>sudo mkdir /sw 
 sudo chown ubuntu /sw
@@ -206,7 +204,7 @@ bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
 <p>Use <code>less</code> to have a look at the phiX-removed reads. You should see some patterns: are there multiple barcodes? Do you see any TA insertion sites? Do the 3' ends of the reads look similar?</p>
 <p>Previous implementations of this workflow used <code>fastx_clipper</code>, part of the fastx toolkit, to remove transposon sequence at the 3' end of the read. Unfortunately this was painfully slow.</p>
 <p>Trimmomatic can do what we want, and is WAY faster. Rather than trim off Illumina adaptors, we can specify a custom file with our transposon sequence to trim:</p>
-<pre><code>java -Xmx28g -jar /panfs/roc/itascasoft/trimmomatic/0.33/trimmomatic.jar SE -phred33 \ phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq_adapter.fa:3:30:10 \ MINLEN:16
+<pre><code>java -Xmx28g -jar /panfs/roc/itascasoft/trimmomatic/0.33/trimmomatic.jar SE -phred33 phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq_adapter.fa:3:30:10 MINLEN:16
 </code></pre>
 <p>Time to introduce the power of <code>bioawk</code>. I'm a huge fan of <code>bioawk</code>. We can use <code>awk</code>-like language to construct <code>if</code> statements, match regex patterns, and print reads meeting our criteria in either fasta or fastq format. In addition, <code>bioawk</code> automatically recognizes and parses these file formats (along with others like GFF and SAM) and assigns logical variables like <code>$seq</code> to describe the sequence and <code>$qual</code> to define the quality string.</p>
 <p>Now we need to discard any reads that did not contain transposon sequence. By this point in our workflow, these reads can be distinguished as still being full-length (51 bp):</p>
