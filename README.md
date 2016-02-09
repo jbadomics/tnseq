@@ -111,7 +111,7 @@ The entire mutant library is then subjected to two or more different outgrowth c
 
 ## Getting down to base-ics
 
-Let's look at the molecular steps again. ![tnseq workflow](tnseq.png)
+Let's look at the molecular steps again. ![tnseq workflow]((https://raw.github.com/jbadomics/tnseq/master/tnseq.png)
 
 The original TA site in the genome is duplicated during the transposition event. In addition, a single transposition event will result (theoretically) in two reads that should map to the same insertion site - one on the forward strand, and one on the reverse strand. We will count this as two **hits** at one **site**.
 
