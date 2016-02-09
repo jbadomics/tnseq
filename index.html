@@ -116,9 +116,18 @@
 <p>Now let's install software:</p>
 <pre><code>sudo apt-get update
 sudo apt-get -y upgrade
-sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
+sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools  unzip wget zlib1g-dev
 </code></pre>
-<p>We will be using some other software packages that require manual installation. First, we'll install Heng Li's <a href="https://github.com/lh3/bioawk">bioawk</a>, an extension of the powerful GNU <code>awk</code> language which readily parses and manipulates common bioinformatics file formats like fastx and sam:</p>
+<p>While I introduce my research and give an overview of Tn-seq, download and unzip the data file we'll be using:</p>
+<pre><code>mkdir ~/data
+sudo mkfs.ext4 -E nodiscard /dev/xvdc
+sudo mount /dev/xvdc ~/data
+sudo chown ubuntu ~/data
+cd ~/data
+wget http://dib-training.ucdavis.edu.s3.amazonaws.com/2016-bodega/tnseq_reads.fastq.gz
+gunzip tnseq_reads.fastq.gz &amp;&amp; md5sum tnseq_reads.fastq.gz
+</code></pre>
+<p>We will also be using some other software packages that require manual installation. First, we'll install Heng Li's <a href="https://github.com/lh3/bioawk">bioawk</a>, an extension of the powerful GNU <code>awk</code> language which readily parses and manipulates common bioinformatics file formats like fastx and sam:</p>
 <pre><code>sudo mkdir /sw 
 sudo chown ubuntu /sw
 chmod 775 /sw
@@ -136,6 +145,11 @@ cd pullseq
 make
 sudo make install
 </code></pre>
+<p>Install Trimmomatic:</p>
+<pre><code>cd /sw &amp;&amp; wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.35.zip
+unzip Trimmomatic-0.35.zip
+echo 'trimmomatic=/sw/Trimmomatic-0.35/trimmomatic-0.35.jar' &gt;&gt; ~/.bashrc
+</code></pre>
 <p>Now let's install <a href="https://github.com/samtools/samtools/releases/tag/1.2">samtools</a> <a href="https://twitter.com/pathogenomenick/status/696409415302430721">version 1.2</a>:</p>
 <pre><code>cd /sw
 wget https://github.com/samtools/samtools/releases/download/1.2/samtools-1.2.tar.bz2
@@ -143,24 +157,22 @@ tar -xvjf samtools-1.2.tar.bz2
 cd samtools-1.2
 make
 </code></pre>
-<p>Install <a href="http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/">bowtie2</a>:</p>
+<p>Install <a href="http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/">bowtie</a> version 1.1.2:</p>
 <pre><code>cd /sw
-wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
-unzip bowtie2-2.2.6-source.zip
-cd bowtie2-2.2.6
-make
+wget http://sourceforge.net/projects/bowtie-bio/files/bowtie/1.1.2/bowtie-1.1.2-linux-x86_64.zip
+unzip bowtie-1.1.2-linux-x86_64.zip
 </code></pre>
 <p>Make sure <code>bash</code> knows where we've installed our packages:</p>
 <pre><code>echo 'PATH=~/tnseq/scripts:$PATH' &gt;&gt; ~/.bashrc
-echo 'PATH=/sw:$PATH' &gt;&gt; ~/.bashrc
+echo 'PATH=/sw/bioawk:$PATH' &gt;&gt; ~/.bashrc
 echo 'PATH=/sw/samtools-1.2:$PATH' &gt;&gt; ~/.bashrc
-echo 'PATH=/sw/bowtie2-2.2.6:$PATH' &gt;&gt; ~/.bashrc
+echo 'PATH=/sw/bowtie-1.1.2:$PATH' &gt;&gt; ~/.bashrc
 source ~/.bashrc
 which bioawk
 </code></pre>
 <p>We also need to install <a href="http://biopython.org/wiki/Main_Page">BioPython</a>:</p>
 <pre><code>sudo easy_install pip setuptools
-sudo pip install --upgrade pip setuptools
+sudo -H pip install --upgrade pip setuptools
 sudo -H pip install pyopenssl ndg-httpsclient pyasn1
 sudo -H pip install biopython
 </code></pre>
@@ -183,11 +195,25 @@ git clone https://github.com/jbadomics/tnseq.git
 <p>The transposon mutant library we'll be looking at contains ~40,000 individual mutants. Some of them will have no phenotype; others will be lethal (i.e. the transposon insertion has interrupted an essential gene); or, the insertion will cause a fitness defect only under certain conditions.</p>
 <p>The entire mutant library is then subjected to two or more different outgrowth conditions, ideally for a known number of cell doublings (more on this later!). Assume a mutation at locus X, which causes a fitness defect under condition 1 but not condition 2. Over a few doubling events under condition 1, cells which carry the locus X mutation will be outcompeted and eventually die off; over the same period under condition 2, cells can continue to grow despite the locus X mutation. After outgrowth, genomic DNA is harvested and submitted for Illumina sequencing to locate the genomic position where the transposon inserted. In condition 1, very few (if any reads) will map, since the mutation caused a fitness defect, whereas in condition 2, more reads will map. Genes with the highest ratios of reads mapped can then be deleted and the phenotype can be verified.</p>
 <h2 id="getting-down-to-base-ics">Getting down to base-ics</h2>
+<p>Let's look at the molecular steps again. <img alt="tnseq workflow" src="./tnseq.png" /></p>
+<p>The original TA site in the genome is duplicated during the transposition event. In addition, a single transposition event will result (theoretically) in two reads that should map to the same insertion site - one on the forward strand, and one on the reverse strand. We will count this as two <strong>hits</strong> at one <strong>site</strong>.</p>
+<p>But there's a problem: when it comes time to map reads, any read mapping to the reverse strand will need to have it's insertion position corrected. Consider the following example of two mock reads mapped to the first TA site in the genome. Here is the resulting SAM file:</p>
+<pre><code>@HD VN:1.0  SO:unsorted
+@SQ SN:chr1 LN:3820884
+@PG ID:bowtie2  PN:bowtie2  VN:2.2.6    CL:&quot;/home/bonddr/badalame/Software/bowtie2-2.2.6/bowtie2-align-s --wrapper basic-0 -x MN1 -S test.sam -q -U simulated.fastq&quot;
+HWI-ST1073:534:H5C2YADXX:1:1101:1118:1918   0   chr1    29  42  20M *   0   0   TATGGAAGAAGTTTGGCTCC    DFEEEEIDDDDDDDDDDDDD    AS:i:0  XN:i:0  XM:i:0  XO:i:0  XG:i:0  NM:i:0  MD:Z:20 YT:Z:UU
+HWI-ST1073:534:H5C2YADXX:1:1101:1138:1935   16  chr1    11  42  20M *   0   0   TCCCGAGAAGGTCTGGTTTA    DDDDDDDDDDDDDIEEEEFD    AS:i:0  XN:i:0  XM:i:0  XO:i:0  XG:i:0  NM:i:0  MD:Z:20 YT:Z:UU
+</code></pre>
+
+<p>In column 4, we can see that the reverse read reports an alignment beginning at base 11, when in fact the TA site of insertion is at the end of the read. For this lesson, I define the coordinate of the TA site as the coordinate of the 'A' residue, which in this case is 30. We'll incorporate a step in our workflow to ensure that the forward and reverse reads arising from the same insertion event end up with an identical insertion coordinate reported.</p>
 <h2 id="tn-seq-data-analysis-workflow">Tn-seq data analysis workflow</h2>
 <h3 id="remove-phix-reads">Remove phiX reads</h3>
 <p>In situations where Illumina reads are generated from the same DNA template (e.g. conserved regions of the 16S rRNA gene), it can be hard to differentiate clusters on the Illumina flow cell unless an external control is spiked into the sample, usually phage phiX DNA. Your sequencing provider may <em>say</em> they've removed phiX reads, but let's check just to be safe.</p>
+<p>First, create a data analysis directory:</p>
+<pre><code>mkdir ~/analysis &amp;&amp; cd ~/analysis
+</code></pre>
 <p>We'll use bowtie2 to map our Tn-seq reads:</p>
-<pre><code>bowtie2-build phiX.fasta phiX
+<pre><code>bowtie-build ~/tnseq/reference/phiX.fasta phiX
 bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
 </code></pre>
 <p>Have a look at the sam file:</p>
@@ -197,14 +223,14 @@ bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
 <pre><code>samtools view -f 4 phiX.sam | cut -f1 | pullseq -i Tn-seq.fastq -N - &gt; phiX_removed.fastq
 </code></pre>
 <p>Let's break this down: <code>samtools view</code> with <code>-f 4</code> collects any <em>unmapped</em> reads, in sam format. The first column contains the read IDs. These are piped into <code>pullseq</code> using <code>-N</code> which takes the read names from STDIN (<code>-n</code> if read IDs are in another file).</p>
-<p>In this lesson I included a shell script called <code>countseq</code> which runs <code>bioawk</code> to correctly count the number of sequences in any fastq or fasta file. Make sure that <code>phiX_removed.fastq</code> contains fewer reads than our raw data:</p>
+<p>In this lesson repository I've also included a shell script called <code>countseq</code> which runs <code>bioawk</code> to correctly count the number of sequences in any fastq or fasta file. Make sure that <code>phiX_removed.fastq</code> contains fewer reads than our raw data:</p>
 <pre><code>countseq *.fastq
 </code></pre>
 <h3 id="remove-transposon-sequence-filter-and-dereplicate">Remove transposon sequence, filter, and dereplicate</h3>
 <p>Use <code>less</code> to have a look at the phiX-removed reads. You should see some patterns: are there multiple barcodes? Do you see any TA insertion sites? Do the 3' ends of the reads look similar?</p>
 <p>Previous implementations of this workflow used <code>fastx_clipper</code>, part of the fastx toolkit, to remove transposon sequence at the 3' end of the read. Unfortunately this was painfully slow.</p>
 <p>Trimmomatic can do what we want, and is WAY faster. Rather than trim off Illumina adaptors, we can specify a custom file with our transposon sequence to trim:</p>
-<pre><code>java -Xmx28g -jar /panfs/roc/itascasoft/trimmomatic/0.33/trimmomatic.jar SE -phred33 phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq_adapter.fa:3:30:10 MINLEN:16
+<pre><code>java -Xmx28g -jar $trimmomatic SE -phred33 phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq_adapter.fa:3:30:10 MINLEN:16
 </code></pre>
 <p>Time to introduce the power of <code>bioawk</code>. I'm a huge fan of <code>bioawk</code>. We can use <code>awk</code>-like language to construct <code>if</code> statements, match regex patterns, and print reads meeting our criteria in either fasta or fastq format. In addition, <code>bioawk</code> automatically recognizes and parses these file formats (along with others like GFF and SAM) and assigns logical variables like <code>$seq</code> to describe the sequence and <code>$qual</code> to define the quality string.</p>
 <p>Now we need to discard any reads that did not contain transposon sequence. By this point in our workflow, these reads can be distinguished as still being full-length (51 bp):</p>
@@ -252,10 +278,10 @@ BC3 GTGT high
 <pre><code>gbk_to_fasta.py Geobacter_sulfurreducens_MN1.gbk
 </code></pre>
 <p>Now the fun can begin! Use bowtie2 to map reads:</p>
-<pre><code>bowtie2-build Geobacter_sulfurreducens_MN1.fasta MN1
-for n in {1..3}; do bowtie2 -x MN1 -U BC$n.fastq -q -S BC$n.sam; done
+<pre><code>bowtie-build Geobacter_sulfurreducens_MN1.fasta MN1
 bowtie -q -p $(nproc --all) -S -n 0 -e 70 -l 28 --nomaqround -y -k 1 -a -m 1 --best MN1 BC1_barcode_removed.fastq BC1.sam
 </code></pre>
+<p>Repeat the above command for BC2 and BC3.</p>
 <p>Take a peek at the output sam files:</p>
 <pre><code>less -S BC1.sam
 </code></pre>
@@ -268,7 +294,9 @@ bowtie -q -p $(nproc --all) -S -n 0 -e 70 -l 28 --nomaqround -y -k 1 -a -m 1 --b
 <li>the reference sequence ID (essential for multi-contig genomes)</li>
 <li>the position along that reference</li>
 <li>the total number of transposon insertions or "hits" at that position</li>
-</ol></div>
+</ol>
+<h3 id="calculate-log2-ratios-to-identify-genes-of-interest">Calculate log2 ratios to identify genes of interest</h3>
+<p>to be continued!</p></div>
         </div>
 
 	<footer class="col-md-12">
