@@ -214,7 +214,7 @@ rev_read    16  chr1    11  42  20M *   0   0   TCCCGAGAAGGTCTGGTTTA    DDDDDDDD
 </code></pre>
 <p>We'll use bowtie2 to map our Tn-seq reads:</p>
 <pre><code>bowtie-build ~/tnseq/reference/phiX.fasta phiX
-bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
+bowtie -q -S -p $(nproc --all) phiX ~/data/tnseq_reads.fastq phiX.sam
 </code></pre>
 <p>Have a look at the sam file:</p>
 <pre><code>less -S phiX.sam
@@ -223,10 +223,10 @@ bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
 <pre><code>samtools view -f 4 phiX.sam | cut -f1 | pullseq -i Tn-seq.fastq -N - &gt; phiX_removed.fastq
 </code></pre>
 <p>Let's break this down: <code>samtools view</code> with <code>-f 4</code> collects any <em>unmapped</em> reads, in sam format. The first column contains the read IDs. These are piped into <code>pullseq</code> using <code>-N</code> which takes the read names from STDIN (<code>-n</code> if read IDs are in another file).</p>
-<p>In this lesson repository I've also included a shell script called <code>countseq</code> which runs <code>bioawk</code> to correctly count the number of sequences in any fastq or fasta file. Make sure that <code>phiX_removed.fastq</code> contains fewer reads than our raw data:</p>
+<p>In this lesson repository I've also included a shell script called <code>countseq</code> which invokes <code>bioawk</code> to correctly count the number of sequences in any fastq or fasta file, and supports shell wildcard expansion. Make sure that <code>phiX_removed.fastq</code> contains fewer reads than our raw data:</p>
 <pre><code>countseq *.fastq
 </code></pre>
-<h3 id="remove-transposon-sequence-filter-and-dereplicate">Remove transposon sequence, filter, and dereplicate</h3>
+<h3 id="remove-transposon-sequence-filter-and-separate-reads-by-barcode">Remove transposon sequence, filter, and separate reads by barcode</h3>
 <p>Use <code>less</code> to have a look at the phiX-removed reads. You should see some patterns: are there multiple barcodes? Do you see any TA insertion sites? Do the 3' ends of the reads look similar?</p>
 <p>Previous implementations of this workflow used <code>fastx_clipper</code>, part of the fastx toolkit, to remove transposon sequence at the 3' end of the read. Unfortunately this was painfully slow.</p>
 <p>Trimmomatic can do what we want, and is WAY faster. Rather than trim off Illumina adaptors, we can specify a custom file with our transposon sequence to trim:</p>
@@ -257,8 +257,8 @@ bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
 <p>Take another peek at the reads with <code>less</code>: they should now all begin with TA and the barcode should now appear at the 3' end.</p>
 <p>Time to separate reads by barcode. This dataset uses 3 barcodes:</p>
 <pre><code>BC1 CAGT parent 
-BC2 GACT low
-BC3 GTGT high
+BC2 GACT low potential electrode outgrowth
+BC3 GTGT high potential electrode outgrowth
 </code></pre>
 
 <p>Note that some reads end with N. Bioawk and regular expressions to the rescue!</p>
@@ -295,8 +295,19 @@ bowtie -q -p $(nproc --all) -S -n 0 -e 70 -l 28 --nomaqround -y -k 1 -a -m 1 --b
 <li>the position along that reference</li>
 <li>the total number of transposon insertions or "hits" at that position</li>
 </ol>
+<h3 id="collect-hit-statistics-by-gene">Collect hit statistics by gene</h3>
+<p>I am not a Python expert, but in this repo there are two scripts we'll use for converting our <code>.hits.txt</code> data by locus tag, using a Genbank file of the reference genome containing the annotation and coordinates of each gene feature.</p>
+<pre><code>mkdir tabulate &amp;&amp; cd tabulate
+tabulate_insertions.py ~/tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC1.hits.txt BC1 0 0.05
+</code></pre>
+<p>The last two numbers specify a percentage to trim off the N- and C-terminus, respectively, of the coding sequence. In past analyses we only consider hits within the first 95% of the total gene length</p>
+<p>As the script runs, you'll see a scrolling output of genes that do not contain any TA site hits. What is significant about these genes?</p>
 <h3 id="calculate-log2-ratios-to-identify-genes-of-interest">Calculate log2 ratios to identify genes of interest</h3>
-<p>to be continued!</p></div>
+<p>Two particular loci should jump out at us: GSU0274 and GSU3259. These genes encode inner membrane cytochromes that function at low and high potential, respectively. So, in the BC2 library (low potential electrode outgrowth), we should see very few hits in GSU0274. Likewise, in the BC3 library, we should see very few hits in GSU3259. Let's use the second script for this:</p>
+<pre><code>insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC2.hits.txt GSU0274 0 0.05
+insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC3.hits.txt GSU3259 0 0.05
+</code></pre>
+<p>to be continued if time permits!</p></div>
         </div>
 
 	<footer class="col-md-12">
