@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for f in $@;
+do
+	bioawk -cfastx -v OFS='$\t' 'END{print NR,FILENAME}' $f;
+done
+
+exit 0
