@@ -1,4 +1,4 @@
-# tnseq
+# Identifying harmful mutations in microbial populations with Tn-seq
 
 This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the [Bodega Bay 2016 bioinformatics course](http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html).
 
@@ -20,12 +20,17 @@ Now let's install software:
 
 We will be using some other software packages that require manual installation. First, we'll install Heng Li's [bioawk](https://github.com/lh3/bioawk), an extension of the powerful GNU `awk` language which readily parses and manipulates common bioinformatics file formats like fastx and sam:
 
-    mkdir ~/sw && cd ~/sw
+    sudo mkdir /sw 
+    sudo chown ubuntu /sw
+    chmod 775 /sw
+    cd /sw
     git clone https://github.com/lh3/bioawk.git
+    cd bioawk
     make
 
 Next, install [pullseq](https://github.com/bcthomas/pullseq). I've found it to be a really handy tool for grabbing reads from fastx files by name or by matching a regular expression:
 
+    cd /sw
     git clone https://github.com/bcthomas/pullseq.git
     cd pullseq
     ./bootstrap
@@ -33,9 +38,9 @@ Next, install [pullseq](https://github.com/bcthomas/pullseq). I've found it to b
     make
     sudo make install
 
-Now let's install [samtools](https://github.com/samtools/samtools/releases/tag/1.2) version 1.2:
+Now let's install [samtools](https://github.com/samtools/samtools/releases/tag/1.2) [version 1.2](https://twitter.com/pathogenomenick/status/696409415302430721):
 
-    cd ~
+    cd /sw
     wget https://github.com/samtools/samtools/releases/download/1.2/samtools-1.2.tar.bz2
     tar -xvjf samtools-1.2.tar.bz2
     cd samtools-1.2
@@ -43,6 +48,7 @@ Now let's install [samtools](https://github.com/samtools/samtools/releases/tag/1
 
 Install [bowtie2](http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/):
 
+    cd /sw
     wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
     unzip bowtie2-2.2.6-source.zip
     cd bowtie2-2.2.6
@@ -50,7 +56,7 @@ Install [bowtie2](http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6
 
 Make sure `bash` knows where we've installed our packages:
 
-    echo 'PATH=~:$PATH' >> ~/.bashrc
+    echo 'PATH=~/tnseq/scripts:$PATH' >> ~/.bashrc
     echo 'PATH=/sw:$PATH' >> ~/.bashrc
     echo 'PATH=/sw/samtools-1.2:$PATH' >> ~/.bashrc
     echo 'PATH=/sw/bowtie2-2.2.6:$PATH' >> ~/.bashrc
