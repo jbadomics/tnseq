@@ -200,9 +200,9 @@ git clone https://github.com/jbadomics/tnseq.git
 <p>But there's a problem: when it comes time to map reads, any read mapping to the reverse strand will need to have it's insertion position corrected. Consider the following example of two mock reads mapped to the first TA site in the genome. Here is the resulting SAM file:</p>
 <pre><code>@HD VN:1.0  SO:unsorted
 @SQ SN:chr1 LN:3820884
-@PG ID:bowtie2  PN:bowtie2  VN:2.2.6    CL:&quot;/home/bonddr/badalame/Software/bowtie2-2.2.6/bowtie2-align-s --wrapper basic-0 -x MN1 -S test.sam -q -U simulated.fastq&quot;
-HWI-ST1073:534:H5C2YADXX:1:1101:1118:1918   0   chr1    29  42  20M *   0   0   TATGGAAGAAGTTTGGCTCC    DFEEEEIDDDDDDDDDDDDD    AS:i:0  XN:i:0  XM:i:0  XO:i:0  XG:i:0  NM:i:0  MD:Z:20 YT:Z:UU
-HWI-ST1073:534:H5C2YADXX:1:1101:1138:1935   16  chr1    11  42  20M *   0   0   TCCCGAGAAGGTCTGGTTTA    DDDDDDDDDDDDDIEEEEFD    AS:i:0  XN:i:0  XM:i:0  XO:i:0  XG:i:0  NM:i:0  MD:Z:20 YT:Z:UU
+@PG ID:bowtie2  PN:bowtie2  VN:2.2.6    CL:&quot;bowtie2-align-s --wrapper basic-0 -x MN1 -S test.sam -q -U simulated.fastq&quot;
+fwd_read    0   chr1    29  42  20M *   0   0   TATGGAAGAAGTTTGGCTCC    DFEEEEIDDDDDDDDDDDDD
+reverse_read    16  chr1    11  42  20M *   0   0   TCCCGAGAAGGTCTGGTTTA    DDDDDDDDDDDDDIEEEEFD
 </code></pre>
 
 <p>In column 4, we can see that the reverse read reports an alignment beginning at base 11, when in fact the TA site of insertion is at the end of the read. For this lesson, I define the coordinate of the TA site as the coordinate of the 'A' residue, which in this case is 30. We'll incorporate a step in our workflow to ensure that the forward and reverse reads arising from the same insertion event end up with an identical insertion coordinate reported.</p>
