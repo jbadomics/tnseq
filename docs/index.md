@@ -16,9 +16,9 @@ When the instance becomes available, copy its address, open a Terminal and conne
 
 Now let's install software:
 
-    sudo apt-get update
-    sudo apt-get -y upgrade
-    sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
+    sudo apt-get update && \
+         sudo apt-get -y upgrade && \
+         sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
 
 We will be using some other software packages that require manual installation. First, we'll install Heng Li's [bioawk](https://github.com/lh3/bioawk), an extension of the powerful GNU `awk` language which readily parses and manipulates common bioinformatics file formats like fastx and sam:
 
