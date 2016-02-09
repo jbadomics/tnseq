@@ -1,1 +1,4 @@
 site_name: Tn-seq
+theme: bootstrap
+repo_url: https://github.com/jbadomics/tnseq
+site_author: Jon Badalamenti

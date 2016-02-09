@@ -2,6 +2,10 @@
 
 This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the [Bodega Bay 2016 bioinformatics course](http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html).
 
+**DISCLAIMER:** This lesson is written for the particular flavor of Tn-seq data generation and analysis that I am familiar with in my lab as described [here](Evan), but modifications to the general Tn-seq scheme exist. Also:
+
+![I am not a bioinformatician](not_a_bioinformatician.jpg)
+
 ## Set up Amazon instance and install dependencies
 
 Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. You will need to create a new private key if you do not already have one.
