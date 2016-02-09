@@ -2,7 +2,7 @@
 
 This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the [Bodega Bay 2016 bioinformatics course](http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html).
 
-**DISCLAIMER:** This lesson is written for the particular flavor of Tn-seq data generation and analysis that I am familiar with in my lab as described [here](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2958.2012.08196.x/abstract), but modifications to the general Tn-seq scheme exist. Also, keep in mind that
+**DISCLAIMER:** This lesson is written for the particular flavor of Tn-seq data generation and analysis that I am familiar with in my lab as described [here](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2958.2012.08196.x/abstract), but modifications to the general Tn-seq scheme exist. Also, keep in mind that, as was determined at #ngs2015
 
 ![I am not a bioinformatician](not_a_bioinformatician.jpg)
 
@@ -166,11 +166,12 @@ Just to be safe, let's write the reads that *don't* begin with TA to another fil
 
 Take another peek at the reads with `less`: they should now all begin with TA and the barcode should now appear at the 3' end.
 
-Time to separate reads by barcode. This dataset uses 2 barcodes:
+Time to separate reads by barcode. This dataset uses 3 barcodes:
 
 ```
-BC1	GACT
-BC2 CAGT
+BC1	CAGT parent 
+BC2 GACT low
+BC3 GTGT high
 ```
 
 Note that some reads end with N. Bioawk and regular expressions to the rescue!
