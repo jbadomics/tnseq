@@ -106,7 +106,7 @@
 
 <h1 id="identifying-harmful-mutations-in-microbial-populations-with-tn-seq">Identifying harmful mutations in microbial populations with Tn-seq</h1>
 <p>This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the <a href="http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html">Bodega Bay 2016 bioinformatics course</a>.</p>
-<p><strong>DISCLAIMER:</strong> This lesson is written for the particular flavor of Tn-seq data generation and analysis that I am familiar with in my lab as described <a href="http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2958.2012.08196.x/abstract">here</a>, but modifications to the general Tn-seq scheme exist. Also, keep in mind that</p>
+<p><strong>DISCLAIMER:</strong> This lesson is written for the particular flavor of Tn-seq data generation and analysis that I am familiar with in my lab as described <a href="http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2958.2012.08196.x/abstract">here</a>, but modifications to the general Tn-seq scheme exist. Also, keep in mind that, as was determined at #ngs2015</p>
 <p><img alt="I am not a bioinformatician" src="./not_a_bioinformatician.jpg" /></p>
 <h2 id="set-up-amazon-instance-and-install-dependencies">Set up Amazon instance and install dependencies</h2>
 <p>Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. You will need to create a new private key if you do not already have one.</p>
@@ -229,9 +229,10 @@ bowtie2 -x phiX -U Tn-seq.fastq -S phiX.sam
 <pre><code>bioawk -c fastx '{ if ($seq !~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq &gt; nonTA.fastq
 </code></pre>
 <p>Take another peek at the reads with <code>less</code>: they should now all begin with TA and the barcode should now appear at the 3' end.</p>
-<p>Time to separate reads by barcode. This dataset uses 2 barcodes:</p>
-<pre><code>BC1 GACT
-BC2 CAGT
+<p>Time to separate reads by barcode. This dataset uses 3 barcodes:</p>
+<pre><code>BC1 CAGT parent 
+BC2 GACT low
+BC3 GTGT high
 </code></pre>
 
 <p>Note that some reads end with N. Bioawk and regular expressions to the rescue!</p>
