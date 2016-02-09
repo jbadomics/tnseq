@@ -1,10 +1,8 @@
-# tnseq
+# Identifying harmful mutations in microbial populations with Tn-seq
 
 This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the [Bodega Bay 2016 bioinformatics course](http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html).
 
-## Learning objectives
-
-## Set up your Amazon instance and install dependencies
+## Set up Amazon instance and install dependencies
 
 Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. You will need to create a new private key if you do not already have one.
 
@@ -16,16 +14,21 @@ Now let's install software:
 
     sudo apt-get update
     sudo apt-get -y upgrade
-    sudo apt-get -y install autoconf automake bison build-essential curl default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc gfortran git libboost-all-dev libbz2-dev libffi-dev libncurses5-dev libpcre++-dev libpcre3-dev libpng-dev libqt4-dev libreadline-dev libssl-dev libxss1 make parallel python-dev python-setuptools seqtk trimmomatic unzip wget xdg-utils zlib1g-dev
+    sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
 
 We will be using some other software packages that require manual installation. First, we'll install Heng Li's [bioawk](https://github.com/lh3/bioawk), an extension of the powerful GNU `awk` language which readily parses and manipulates common bioinformatics file formats like fastx and sam:
 
-    mkdir ~/sw && cd ~/sw
+    sudo mkdir /sw 
+    sudo chown ubuntu /sw
+    chmod 775 /sw
+    cd /sw
     git clone https://github.com/lh3/bioawk.git
+    cd bioawk
     make
 
 Next, install [pullseq](https://github.com/bcthomas/pullseq). I've found it to be a really handy tool for grabbing reads from fastx files by name or by matching a regular expression:
 
+    cd /sw
     git clone https://github.com/bcthomas/pullseq.git
     cd pullseq
     ./bootstrap
@@ -33,9 +36,9 @@ Next, install [pullseq](https://github.com/bcthomas/pullseq). I've found it to b
     make
     sudo make install
 
-Now let's install [samtools](https://github.com/samtools/samtools/releases/tag/1.2) version 1.2:
+Now let's install [samtools](https://github.com/samtools/samtools/releases/tag/1.2) [version 1.2](https://twitter.com/pathogenomenick/status/696409415302430721):
 
-    cd ~
+    cd /sw
     wget https://github.com/samtools/samtools/releases/download/1.2/samtools-1.2.tar.bz2
     tar -xvjf samtools-1.2.tar.bz2
     cd samtools-1.2
@@ -43,6 +46,7 @@ Now let's install [samtools](https://github.com/samtools/samtools/releases/tag/1
 
 Install [bowtie2](http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/):
 
+    cd /sw
     wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
     unzip bowtie2-2.2.6-source.zip
     cd bowtie2-2.2.6
@@ -50,19 +54,24 @@ Install [bowtie2](http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6
 
 Make sure `bash` knows where we've installed our packages:
 
-    echo 'PATH=~:$PATH' >> ~/.bashrc
-    echo 'PATH=~/sw:$PATH' >> ~/.bashrc
-    echo 'PATH=~/sw/samtools-1.2:$PATH' >> ~/.bashrc
-    echo 'PATH=~/sw/bowtie2-2.2.6:$PATH' >> ~/.bashrc
+    echo 'PATH=~/tnseq/scripts:$PATH' >> ~/.bashrc
+    echo 'PATH=/sw:$PATH' >> ~/.bashrc
+    echo 'PATH=/sw/samtools-1.2:$PATH' >> ~/.bashrc
+    echo 'PATH=/sw/bowtie2-2.2.6:$PATH' >> ~/.bashrc
     source ~/.bashrc
     which bioawk
 
-Finally, we need to install [BioPython](http://biopython.org/wiki/Main_Page):
+We also need to install [BioPython](http://biopython.org/wiki/Main_Page):
 
     sudo easy_install pip setuptools
     sudo pip install --upgrade pip setuptools
     sudo -H pip install pyopenssl ndg-httpsclient pyasn1
     sudo -H pip install biopython
+
+Finally, clone the lesson repo into your home directory:
+
+    cd ~
+    git clone https://github.com/jbadomics/tnseq.git
 
 ## Introduction to Tn-seq
 
@@ -119,7 +128,7 @@ Previous implementations of this workflow used `fastx_clipper`, part of the fast
 
 Trimmomatic can do what we want, and is WAY faster. Rather than trim off Illumina adaptors, we can specify a custom file with our transposon sequence to trim:
 
-    java -Xmx28g -jar /panfs/roc/itascasoft/trimmomatic/0.33/trimmomatic.jar SE -phred33 \ phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq_adapter.fa:3:30:10 \ MINLEN:16
+    java -Xmx28g -jar /panfs/roc/itascasoft/trimmomatic/0.33/trimmomatic.jar SE -phred33 phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq_adapter.fa:3:30:10 MINLEN:16
 
 Time to introduce the power of `bioawk`. I'm a huge fan of `bioawk`. We can use `awk`-like language to construct `if` statements, match regex patterns, and print reads meeting our criteria in either fasta or fastq format. In addition, `bioawk` automatically recognizes and parses these file formats (along with others like GFF and SAM) and assigns logical variables like `$seq` to describe the sequence and `$qual` to define the quality string.
 
