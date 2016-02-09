@@ -264,7 +264,10 @@ As the script runs, you'll see a scrolling output of genes that do not contain a
 
 ### Calculate log2 ratios to identify genes of interest
 
-Two particular loci should jump out at us: GSU0274 and GSU3259. These genes encode inner membrane cytochromes that function at low and high potential, respectively. So, in the BC2 library (low potential electrode outgrowth), we should see very few hits in GSU0274. Likewise, in the BC3 library, we should see very few hits in GSU3259.
+Two particular loci should jump out at us: GSU0274 and GSU3259. These genes encode inner membrane cytochromes that function at low and high potential, respectively. So, in the BC2 library (low potential electrode outgrowth), we should see very few hits in GSU0274. Likewise, in the BC3 library, we should see very few hits in GSU3259. Let's use the second script for this:
+
+    insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC2.hits.txt GSU0274 0 0.05
+    insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC3.hits.txt GSU3259 0 0.05
 
 to be continued if time permits!
 
