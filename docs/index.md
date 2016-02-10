@@ -8,7 +8,7 @@ This repository contains lesson materials, instructions, and scripts for analyzi
 
 ## Set up Amazon instance and install dependencies
 
-Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. Before you click 'Review and Launch', **increase the root file system size to 30 GB.** You will need to create a new private key if you do not already have one.
+Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. **Before you click 'Review and Launch'**, increase the root file system size to 30 GB. You will need to create a new private key if you do not already have one.
 
 When the instance becomes available, copy its address, open a Terminal and connect to it via ssh:
 
@@ -17,8 +17,8 @@ When the instance becomes available, copy its address, open a Terminal and conne
 Now let's install software:
 
     sudo apt-get update && \
-         sudo apt-get -y upgrade && \
-         sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
+    sudo apt-get -y upgrade && \
+    sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
 
 While I introduce my research and give an overview of Tn-seq, download and unzip the data file we'll be using:
 
@@ -71,12 +71,11 @@ Now let's install [samtools](https://github.com/samtools/samtools/releases/tag/1
     cd samtools-1.2
     make
 
-Install [bowtie2](http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/):
+Install [bowtie](https://sourceforge.net/projects/bowtie-bio/files/bowtie/1.1.2/):
 
     cd /sw
-    wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.6/bowtie2-2.2.6-source.zip
-    unzip bowtie2-2.2.6-source.zip
-    cd bowtie2-2.2.6
+    wget https://sourceforge.net/projects/bowtie-bio/files/bowtie/1.1.2/bowtie-1.1.2-src.zip
+    cd bowtie-1.1.2
     make
 
 Make sure `bash` knows where we've installed our packages:
@@ -102,7 +101,7 @@ Finally, clone the lesson repo into your home directory:
 
 ## Introduction to Tn-seq
 
-In this lesson, we'll be analyzing Tn-seq data from an environmental bacterium that we study in the [Bond Lab](http://thebondlab.org), *Geobacter sulfurreducens*. This organism is a model system for microbial metal reduction and extracellular electron transfer, since these microbes obtain metabolic energy by respiring insoluble metal oxides like Fe and Mn located outside the cell. Our lab is interested in identifying the proteins involved in this remarkable ability to transfer electrons across two insulating biological membranes.
+In this lesson, we'll be analyzing Tn-seq data from an environmental bacterium that we study in the [Bond Lab](http://thebondlab.org), *Geobacter sulfurreducens*. This organism is a model system for microbial metal reduction and extracellular electron transfer, since it obtains metabolic energy by respiring insoluble metal oxides like Fe and Mn located outside the cell. Our lab is interested in identifying the proteins involved in this remarkable ability to transfer electrons across two insulating biological membranes.
 
 Tn-seq is a hypothesis-generating tool for identifying genes that provide fitness benefit under particular conditions. The procedure requires the following:
 
@@ -124,7 +123,7 @@ Let's look at the molecular steps again. ![tnseq workflow](tnseq.png)
 
 The original TA site in the genome is duplicated during the transposition event. In addition, a single transposition event will result (theoretically) in two reads that should map to the same insertion site - one on the forward strand, and one on the reverse strand. We will count this as two hits at one site.
 
-But there's a problem: when it comes time to map reads, any read mapping to the reverse strand will need to have it's insertion position corrected. Consider the following example of two mock reads mapped to the first TA site in the genome. Here is the resulting SAM file:
+But there's a problem: when it comes time to map reads, any read mapping to the reverse strand will need to have its insertion position corrected. Consider the following example of two mock reads mapped to the first TA site in the genome. Here is the resulting SAM file:
 
 ```
 @HD VN:1.0  SO:unsorted
@@ -273,7 +272,7 @@ Now have a look at `BC1.hits.txt`. It should be a tab-delimited text file with t
 
 ### Collect hit statistics by gene
 
-I am not a Python expert, but in this repo there are two scripts we'll use for converting our .hits.txt data by locus tag, using a Genbank file of the reference genome containing the annotation and coordinates of each gene feature.
+I am not a Python expert, but in this repo there are two scripts we'll use for converting our `.hits.txt` data by locus tag, using a Genbank file of the reference genome containing the annotation and coordinates of each gene feature.
 
     mkdir tabulate && cd tabulate
     tabulate_insertions.py ~/tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC1.hits.txt BC1 0 0.05
@@ -289,7 +288,7 @@ Two particular loci should jump out at us: GSU0274 and GSU3259. These genes enco
     insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC2.hits.txt GSU0274 0 0.05
     insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC3.hits.txt GSU3259 0 0.05
 
-to be continued if time permits!
+
 
 
 
