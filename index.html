@@ -108,7 +108,6 @@
 <p>This repository contains lesson materials, instructions, and scripts for analyzing Tn-seq data as presented during the <a href="http://dib-training.readthedocs.org/en/pub/2016-02-08-bodega.html">Bodega Bay 2016 bioinformatics course</a>.</p>
 <p><strong>DISCLAIMER:</strong> This lesson is written for the particular flavor of Tn-seq data generation and analysis that I am familiar with in my lab as described <a href="http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2958.2012.08196.x/abstract">here</a>, but modifications to the general Tn-seq scheme exist. Also, keep in mind that, as was determined at #ngs2015</p>
 <p><img alt="I am not a bioinformatician" src="./not_a_bioinformatician.jpg" /></p>
-<p>Does this change in README.md?</p>
 <h2 id="set-up-amazon-instance-and-install-dependencies">Set up Amazon instance and install dependencies</h2>
 <p>Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. <strong>Before you click 'Review and Launch'</strong>, increase the root file system size to 30 GB. You will need to create a new private key if you do not already have one.</p>
 <p>When the instance becomes available, copy its address, open a Terminal and connect to it via ssh:</p>
@@ -318,7 +317,7 @@ tabulate_insertions.py ~/tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC1
 </code></pre>
 <p>The last two numbers specify a percentage to trim off the N- and C-terminus, respectively, of the coding sequence. In past analyses we only consider hits within the first 95% of the total gene length</p>
 <p>As the script runs, you'll see a scrolling output of genes that do not contain any TA site hits. What is significant about these genes?</p>
-<h3 id="calculate-log2-ratios-to-identify-genes-of-interest">Calculate log2 ratios to identify genes of interest</h3>
+<h3 id="calculate-log2-ratios-to-identify-genes-of-interest">Calculate log~2~ ratios to identify genes of interest</h3>
 <p>Two particular loci should jump out at us: GSU0274 and GSU3259. These genes encode inner membrane cytochromes that function at low and high potential, respectively. So, in the BC2 library (low potential electrode outgrowth), we should see very few hits in GSU0274. Likewise, in the BC3 library, we should see very few hits in GSU3259. Let's use the second script for this:</p>
 <pre><code>insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC2.hits.txt GSU0274 0 0.05
 insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC3.hits.txt GSU3259 0 0.05
