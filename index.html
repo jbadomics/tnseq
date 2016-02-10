@@ -269,7 +269,7 @@ BC3 GTGT high potential electrode outgrowth
 </code></pre>
 
 <p>Note that some reads end with N. Bioawk and regular expressions to the rescue!</p>
-<pre><code>bioawk -c fastx '{ if ($seq ~ /GAC[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq &gt; BC1.fastq
+<pre><code>bioawk -c fastx '{ if ($seq ~ /CAG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq &gt; BC1.fastq
 </code></pre>
 <p>Change the regex pattern and run the same command for BC2:</p>
 <pre><code>bioawk -c fastx '{ if ($seq ~ /CAG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq&gt; BC2.fastq
