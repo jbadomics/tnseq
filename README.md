@@ -28,8 +28,9 @@ While I introduce my research and give an overview of Tn-seq, download and unzip
     sudo chown ubuntu ~/data
     cd ~/data
     wget http://dib-training.ucdavis.edu.s3.amazonaws.com/2016-bodega/tnseq_reads.fastq.gz
-    gunzip tnseq_reads.fastq.gz && md5sum tnseq_reads.fastq.gz
-    
+    gunzip tnseq_reads.fastq.gz && md5sum tnseq_reads.fastq
+    echo d050f8a17c1838a92896d456f845f286  tnseq_reads.fastq
+ 
 We will also be using some other software packages that require manual installation. First, we'll install Heng Li's [bioawk](https://github.com/lh3/bioawk), an extension of the powerful GNU `awk` language which readily parses and manipulates common bioinformatics file formats like fastx and sam:
 
     sudo mkdir /sw 
@@ -133,9 +134,9 @@ In column 4, we can see that the reverse read reports an alignment beginning at 
 
 In situations where Illumina reads are generated from the same DNA template (e.g. conserved regions of the 16S rRNA gene), it can be hard to differentiate clusters on the Illumina flow cell unless an external control is spiked into the sample, usually phage phiX DNA. Your sequencing provider may *say* they've removed phiX reads, but let's check just to be safe.
 
-First, create a data analysis directory:
+Let us go to the analysis directory we created and attached a volume to above:
 
-    mkdir ~/analysis && cd ~/analysis
+    cd ~/analysis
 
 We'll use bowtie2 to map our Tn-seq reads:
 
@@ -151,6 +152,15 @@ You'll notice that we have quite a few reads mapping to phiX. We should remove t
     samtools view -f 4 phiX.sam | cut -f1 | pullseq -i Tn-seq.fastq -N - > phiX_removed.fastq
 
 Let's break this down: `samtools view` with `-f 4` collects any *unmapped* reads, in sam format. The first column contains the read IDs. These are piped into `pullseq` using `-N` which takes the read names from STDIN (`-n` if read IDs are in another file).
+
+There may be a faster way to do the above with `awk`:
+
+    samtools view -f 4 phiX.sam | awk '{printf("@%s\n%s\n+\n%s\n", $1, $10, $11);}'  > phiX_removed.fastq
+
+Or even:
+
+    bioawk -c sam '{ if ($flag==4) {print "@"$qname; print $seq; print "+"; print $qual}}' phiX.sam > phiX_removed.fastq
+
 
 In this lesson repository I've also included a shell script called `countseq` which invokes `bioawk` to correctly count the number of sequences in any fastq or fasta file, and supports shell wildcard expansion. Make sure that `phiX_removed.fastq` contains fewer reads than our raw data:
 
