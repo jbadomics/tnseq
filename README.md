@@ -6,8 +6,6 @@ This repository contains lesson materials, instructions, and scripts for analyzi
 
 ![I am not a bioinformatician](not_a_bioinformatician.jpg)
 
-Does this change in README.md?
-
 ## Set up Amazon instance and install dependencies
 
 Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. **Before you click 'Review and Launch'**, increase the root file system size to 30 GB. You will need to create a new private key if you do not already have one.
