@@ -28,8 +28,9 @@ While I introduce my research and give an overview of Tn-seq, download and unzip
     sudo chown ubuntu ~/data
     cd ~/data
     wget http://dib-training.ucdavis.edu.s3.amazonaws.com/2016-bodega/tnseq_reads.fastq.gz
-    gunzip tnseq_reads.fastq.gz && md5sum tnseq_reads.fastq.gz
-    
+    gunzip tnseq_reads.fastq.gz && md5sum tnseq_reads.fastq
+    echo d050f8a17c1838a92896d456f845f286  tnseq_reads.fastq
+ 
 We will also be using some other software packages that require manual installation. First, we'll install Heng Li's [bioawk](https://github.com/lh3/bioawk), an extension of the powerful GNU `awk` language which readily parses and manipulates common bioinformatics file formats like fastx and sam:
 
     sudo mkdir /sw 
