@@ -272,7 +272,10 @@ BC3 GTGT high potential electrode outgrowth
 <pre><code>bioawk -c fastx '{ if ($seq ~ /CAG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq &gt; BC1.fastq
 </code></pre>
 <p>Change the regex pattern and run the same command for BC2:</p>
-<pre><code>bioawk -c fastx '{ if ($seq ~ /CAG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq&gt; BC2.fastq
+<pre><code>bioawk -c fastx '{ if ($seq ~ /GAC[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq&gt; BC2.fastq
+</code></pre>
+<p>And for BC3:</p>
+<pre><code>bioawk -c fastx '{ if ($seq ~ /GTG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq&gt; BC3.fastq
 </code></pre>
 <p>Make sure everything adds up:</p>
 <pre><code>countseq tn_removed*.fastq
