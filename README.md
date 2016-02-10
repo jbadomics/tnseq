@@ -133,9 +133,9 @@ In column 4, we can see that the reverse read reports an alignment beginning at 
 
 In situations where Illumina reads are generated from the same DNA template (e.g. conserved regions of the 16S rRNA gene), it can be hard to differentiate clusters on the Illumina flow cell unless an external control is spiked into the sample, usually phage phiX DNA. Your sequencing provider may *say* they've removed phiX reads, but let's check just to be safe.
 
-First, create a data analysis directory:
+Let us go to the analysis directory we created and attached a volume to above:
 
-    mkdir ~/analysis && cd ~/analysis
+    cd ~/analysis
 
 We'll use bowtie2 to map our Tn-seq reads:
 
