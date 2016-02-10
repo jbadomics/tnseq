@@ -237,7 +237,7 @@ bowtie -q -S -p $(nproc --all) phiX ~/data/tnseq_reads.fastq phiX.sam
 <p>Use <code>less</code> to have a look at the phiX-removed reads. You should see some patterns: are there multiple barcodes? Do you see any TA insertion sites? Do the 3' ends of the reads look similar?</p>
 <p>Previous implementations of this workflow used <code>fastx_clipper</code>, part of the fastx toolkit, to remove transposon sequence at the 3' end of the read. Unfortunately this was painfully slow.</p>
 <p>Trimmomatic can do what we want, and is WAY faster. Rather than trim off Illumina adaptors, we can specify a custom file with our transposon sequence to trim:</p>
-<pre><code>java -Xmx28g -jar $trimmomatic SE -phred33 phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq_adapter.fa:3:30:10 MINLEN:16
+<pre><code>java -Xmx28g -jar $trimmomatic SE -phred33 phiX_removed.fastq tn_removed.fastq ILLUMINACLIP:/home/ubuntu/tnseq/reference/tnseq_adapters.fa:3:30:10 MINLEN:16
 </code></pre>
 <p>Time to introduce the power of <code>bioawk</code>. I'm a huge fan of <code>bioawk</code>. We can use <code>awk</code>-like language to construct <code>if</code> statements, match regex patterns, and print reads meeting our criteria in either fasta or fastq format. In addition, <code>bioawk</code> automatically recognizes and parses these file formats (along with others like GFF and SAM) and assigns logical variables like <code>$seq</code> to describe the sequence and <code>$qual</code> to define the quality string.</p>
 <p>Now we need to discard any reads that did not contain transposon sequence. By this point in our workflow, these reads can be distinguished as still being full-length (51 bp):</p>
