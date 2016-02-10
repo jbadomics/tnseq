@@ -256,7 +256,7 @@ bowtie -q -S -p $(nproc --all) phiX ~/data/tnseq_reads.fastq phiX.sam
 <pre><code>fastx_reverse_complement -i tn_removed.filtered.length.fastq -o tn_removed.filtered.length.rc.fastq
 </code></pre>
 <p>What if a read doesn't begin with TA? This can happen sometimes, since the transposon does integrate at non-TA sites at ~2% frequency. We can safely remove the non-TA insertion reads with--you guessed it--bioawk:</p>
-<pre><code>bioawk -c fastx '{ if ($seq !~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq &gt; \ tn_removed.filtered.length.rc.TAonly.fastq
+<pre><code>bioawk -c fastx '{ if ($seq ~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq &gt;  tn_removed.filtered.length.rc.TAonly.fastq
 </code></pre>
 <p>Just to be safe, let's write the reads that <em>don't</em> begin with TA to another file:</p>
 <pre><code>bioawk -c fastx '{ if ($seq !~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq &gt; nonTA.fastq
