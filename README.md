@@ -156,6 +156,11 @@ There may be a faster way to do the above with `awk`:
 
     samtools view -f 4 phiX.sam | awk '{printf("@%s\n%s\n+\n%s\n", $1, $10, $11);}'  > phiX_removed.fastq
 
+Or even:
+
+    bioawk -c sam '{ if ($flag==4) {print "@"$qname; print $seq; print "+"; print $qual}}' phiX.sam > phiX_removed.fastq
+
+
 In this lesson repository I've also included a shell script called `countseq` which invokes `bioawk` to correctly count the number of sequences in any fastq or fasta file, and supports shell wildcard expansion. Make sure that `phiX_removed.fastq` contains fewer reads than our raw data:
 
     countseq *.fastq
