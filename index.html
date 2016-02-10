@@ -317,7 +317,7 @@ tabulate_insertions.py ~/tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC1
 </code></pre>
 <p>The last two numbers specify a percentage to trim off the N- and C-terminus, respectively, of the coding sequence. In past analyses we only consider hits within the first 95% of the total gene length</p>
 <p>As the script runs, you'll see a scrolling output of genes that do not contain any TA site hits. What is significant about these genes?</p>
-<h3 id="calculate-log2-ratios-to-identify-genes-of-interest">Calculate log~2~ ratios to identify genes of interest</h3>
+<h3 id="calculate-log2-ratios-to-identify-genes-of-interest">Calculate log2 ratios to identify genes of interest</h3>
 <p>Two particular loci should jump out at us: GSU0274 and GSU3259. These genes encode inner membrane cytochromes that function at low and high potential, respectively. So, in the BC2 library (low potential electrode outgrowth), we should see very few hits in GSU0274. Likewise, in the BC3 library, we should see very few hits in GSU3259. Let's use the second script for this:</p>
 <pre><code>insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC2.hits.txt GSU0274 0 0.05
 insertion_statistics_by_locustag.py /tnseq/reference/Geobacter_sulfurreducens_MN1.gbk ../BC3.hits.txt GSU3259 0 0.05
