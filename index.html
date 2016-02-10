@@ -278,7 +278,7 @@ BC3 GTGT high potential electrode outgrowth
 <pre><code>bioawk -c fastx '{ if ($seq ~ /GTG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq&gt; BC3.fastq
 </code></pre>
 <p>Make sure everything adds up:</p>
-<pre><code>countseq tn_removed*.fastq
+<pre><code>countseq BC*.fastq
 </code></pre>
 <p>Now, remove the barcode on each dataset:</p>
 <pre><code>fastx_trimmer -t 4 -i BC1.fastq -o BC1_barcode_removed.fastq
