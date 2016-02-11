@@ -6,8 +6,6 @@ This repository contains lesson materials, instructions, and scripts for analyzi
 
 ![I am not a bioinformatician](not_a_bioinformatician.jpg)
 
-Does this change in README.md?
-
 ## Set up Amazon instance and install dependencies
 
 Before we get going with data analysis, we need to set up our environment and install some dependencies. On Amazon Web Services, launch Ubuntu 14.04 LTS (64-bit) on an m3.2xlarge instance. **Before you click 'Review and Launch'**, increase the root file system size to 30 GB. You will need to create a new private key if you do not already have one.
@@ -18,9 +16,7 @@ When the instance becomes available, copy its address, open a Terminal and conne
 
 Now let's install software:
 
-    sudo apt-get update && \
-    sudo apt-get -y upgrade && \
-    sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
+    sudo apt-get update && sudo apt-get -y upgrade && sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
 
 While I introduce my research and give an overview of Tn-seq, download and unzip the data file we'll be using:
 
@@ -77,13 +73,14 @@ Install [bowtie](https://sourceforge.net/projects/bowtie-bio/files/bowtie/1.1.2/
 
     cd /sw
     wget https://sourceforge.net/projects/bowtie-bio/files/bowtie/1.1.2/bowtie-1.1.2-src.zip
+    unzip bowtie-1.1.2-src.zip
     cd bowtie-1.1.2
     make
 
 Make sure `bash` knows where we've installed our packages:
 
     echo 'PATH=~/tnseq/scripts:$PATH' >> ~/.bashrc
-    echo 'PATH=/sw:$PATH' >> ~/.bashrc
+    echo 'PATH=/sw/bioawk:$PATH' >> ~/.bashrc
     echo 'PATH=/sw/samtools-1.2:$PATH' >> ~/.bashrc
     echo 'PATH=/sw/bowtie-1.1.2:$PATH' >> ~/.bashrc
     source ~/.bashrc
@@ -146,30 +143,12 @@ In situations where Illumina reads are generated from the same DNA template (e.g
 
 First, create a data analysis directory:
 
-    mkdir ~/analysis && cd ~/analysis
+    cd ~/analysis
 
-We'll use bowtie to map our Tn-seq reads:
+We'll use bowtie to map our Tn-seq reads and discard STDOUT since we're really only interested in the unmapped reads:
 
     bowtie-build ~/tnseq/reference/phiX.fasta phiX
-    bowtie -q -S -p $(nproc --all) phiX ~/data/tnseq_reads.fastq phiX.sam
-    
-Have a look at the sam file:
-
-    less -S phiX.sam
-
-You'll notice that we have quite a few reads mapping to phiX. We should remove them from the dataset before we continue:
-
-    samtools view -f 4 phiX.sam | cut -f1 | pullseq -i Tn-seq.fastq -N - > phiX_removed.fastq
-    
-Let's break this down: `samtools view` with `-f 4` collects any *unmapped* reads, in sam format. The first column contains the read IDs. These are piped into `pullseq` using `-N` which takes the read names from STDIN (`-n` if read IDs are in another file).
-
-...or not. Unfortunately during the lesson we quickly discovered that pullseq is a memory hog and will eventually run out of RAM. The simplest option is to re-run bowtie and ask it to return the unmapped reads:
-
-    bowtie -q -S -p $(nproc --all) --un phiX_removed.fastq phiX ~/data/tnseq_reads.fastq phiX.sam
-
-Alternatively, you can run this command after bowtie to pull the unmapped reads in FASTQ format:
-
-    bioawk -c sam '{ if ($flag==4) {print "@"$qname; print $seq; print "+"; print $qual}}' phiX.sam > phiX_removed.fastq
+    bowtie -q -p $(nproc --all) --un phiX_removed.fastq phiX ~/data/tnseq_reads.fastq > /dev/null
 
 In this lesson I included a shell script called `countseq` which runs `bioawk` to correctly count the number of sequences in any fastq or fasta file. Make sure that `phiX_removed.fastq` contains fewer reads than our raw data:
 
@@ -187,9 +166,9 @@ Trimmomatic can do what we want, and is WAY faster. Rather than trim off Illumin
 
 Time to introduce the power of `bioawk`. I'm a huge fan of bioawk. We can use `awk`-like language to construct `if` statements, match regex patterns, and print reads meeting our criteria in either fasta or fastq format. In addition, bioawk automatically recognizes and parses these file formats (along with others like GFF and SAM) and assigns logical variables like `$seq` to describe the sequence and `$qual` to define the quality string.
 
-Now we need to discard any reads that did not contain transposon sequence. By this point in our workflow, these reads can be distinguished as still being full-length (51 bp):
+Now we need to discard any reads that did not contain transposon sequence. By this point in our workflow, these reads can be distinguished as still being full-length (51 bp). Since we'll filter reads by length in a second, any transposon-less reads will get discarded anyway. But for possible diagnostic purposes, pull the transposon-less reads into a separate fastq file:
 
-    bioawk -c fastx '{ if(length($seq) != 51) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.fastq > tn_removed.filtered.fastq
+    bioawk -c fastx '{ if(length($seq) == 51) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.fastq > no_transposon.fastq
 
 Let's use bioawk again in a one-liner to capture a length distribution of the filtered reads:
 
@@ -197,7 +176,7 @@ Let's use bioawk again in a one-liner to capture a length distribution of the fi
 
 As we expect, the overwhelming majority of our data is 20 or 21 bp. Keep in mind that the reads still contain barcode, which we'll remove shortly. But before we get to that, run bioawk to collect the reads of desired length:
 
-    bioawk -c fastx '{ if(length($seq) >= 19 && length($seq) < 23) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.fastq > tn_removed.filtered.length.fastq
+    bioawk -c fastx '{ if(length($seq) >= 19 && length($seq) < 23) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.fastq > tn_removed.filtered.fastq
         
 Rerun `countseq` to keep an eye on how many sequences we're discarding at each step:
 
@@ -205,15 +184,15 @@ Rerun `countseq` to keep an eye on how many sequences we're discarding at each s
 
 When we go to map reads against the reference genome, it is critical to keep track of the genomic position where the insertion occurred. Conceptually it makes sense to reverse complement the reads so that the TA insertion sequence occurs at the 5' end:
 
-    fastx_reverse_complement -i tn_removed.filtered.length.fastq -o tn_removed.filtered.length.rc.fastq
+    fastx_reverse_complement -i tn_removed.filtered.fastq -o tn_removed.filtered.rc.fastq
 
 What if a read doesn't begin with TA? This can happen sometimes, since the transposon does integrate at non-TA sites at ~2% frequency. We can safely remove the non-TA insertion reads with--you guessed it--bioawk:
 
-    bioawk -c fastx '{ if ($seq ~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq > \ tn_removed.filtered.length.rc.TAonly.fastq
+    bioawk -c fastx '{ if ($seq ~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.rc.fastq > tn_removed.filtered.rc.TAonly.fastq
 
 Just to be safe, let's write the reads that *don't* begin with TA to another file:
 
-    bioawk -c fastx '{ if ($seq !~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.fastq > nonTA.fastq
+    bioawk -c fastx '{ if ($seq !~ /^TA/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.rc.fastq > nonTA.fastq
 
 Take another peek at the reads with `less`: they should now all begin with TA and the barcode should now appear at the 3' end.
 
@@ -227,15 +206,15 @@ BC3 GTGT low potential electrode outgrowth
 
 Note that some reads end with N but should be considered as having the barcode. Bioawk can also take a regular expression:
 
-    bioawk -c fastx '{ if ($seq ~ /CAG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq > BC1.fastq
+    bioawk -c fastx '{ if ($seq ~ /CAG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.rc.TAonly.fastq > BC1.fastq
 
 Change the regex pattern and run the same command for BC2:
 
-    bioawk -c fastx '{ if ($seq ~ /GAC[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq> BC2.fastq
+    bioawk -c fastx '{ if ($seq ~ /GAC[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.rc.TAonly.fastq > BC2.fastq
 
 And for BC3:
 
-    bioawk -c fastx '{ if ($seq ~ /GTG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.length.rc.TAonly.fastq> BC2.fastq
+    bioawk -c fastx '{ if ($seq ~ /GTG[TN]$/) { print "@"$name; print $seq; print "+"; print $qual; }}' tn_removed.filtered.rc.TAonly.fastq> BC3.fastq
     
 Make sure everything adds up:
 
@@ -249,6 +228,7 @@ Now, use a `for` loop to remove the barcode from each dataset:
 
 Thinking ahead: when it comes time to tabulate the insertion coordinates by locus tag, the reference genome name and sequence need to match what we use to map reads to. **Unfortunately this isn't always the case.** The safest bet is to pull the genome sequence from the same Genbank file we'll use later for tabulating insertions. Run this little python script:
 
+    ln -s ~/tnseq/reference/Geobacter_sulfurreducens_MN1.gbk
     gbk_to_fasta.py Geobacter_sulfurreducens_MN1.gbk
 
 Now the fun can begin! Use bowtie to map reads:
