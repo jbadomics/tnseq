@@ -225,7 +225,7 @@ bowtie -q -p $(nproc --all) --un phiX_removed.fastq phiX ~/data/tnseq_reads.fast
 <p>In this lesson I included a shell script called <code>countseq</code> which runs <code>bioawk</code> to correctly count the number of sequences in any fastq or fasta file. Make sure that <code>phiX_removed.fastq</code> contains fewer reads than our raw data:</p>
 <pre><code>countseq *.fastq
 </code></pre>
-<h3 id="remove-transposon-sequence-filter-and-dereplicate">Remove transposon sequence, filter, and dereplicate</h3>
+<h3 id="remove-transposon-sequence-filter-and-demultiplex">Remove transposon sequence, filter, and demultiplex</h3>
 <p>Use <code>less</code> to have a look at the phiX-removed reads. You should see some patterns: are there multiple barcodes? Do you see any TA insertion sites? Do the 3' ends of the reads look similar?</p>
 <p>Previous implementations of this workflow used <code>fastx_clipper</code>, part of the fastx toolkit, to remove transposon sequence at the 3' end of the read. Unfortunately this was painfully slow.</p>
 <p>Trimmomatic can do what we want, and is WAY faster. Rather than trim off Illumina adaptors, we can specify a custom file with our transposon sequence to trim:</p>
