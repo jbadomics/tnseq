@@ -16,9 +16,7 @@ When the instance becomes available, copy its address, open a Terminal and conne
 
 Now let's install software:
 
-    sudo apt-get update && \
-    sudo apt-get -y upgrade && \
-    sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
+    sudo apt-get update && sudo apt-get -y upgrade && sudo apt-get -y install autoconf automake bison build-essential default-jdk default-jre expat fastqc fastx-toolkit  g++ gcc git libboost-all-dev libbz2-dev libncurses5-dev libpcre++-dev libpcre3-dev make parallel python-dev python-setuptools trimmomatic unzip wget zlib1g-dev
 
 While I introduce my research and give an overview of Tn-seq, download and unzip the data file we'll be using:
 
