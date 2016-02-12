@@ -145,7 +145,7 @@ First, create a data analysis directory:
 
     cd ~/analysis
 
-We'll use bowtie to map our Tn-seq reads and discard STDOUT since we're really only interested in the unmapped reads:
+We'll use bowtie to map our Tn-seq reads and discard STDOUT since we're really only interested in the unmapped reads (specified with `--un`):
 
     bowtie-build ~/tnseq/reference/phiX.fasta phiX
     bowtie -q -p $(nproc --all) --un phiX_removed.fastq phiX ~/data/tnseq_reads.fastq > /dev/null
