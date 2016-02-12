@@ -52,6 +52,4 @@ sudo pip install --upgrade pip setuptools
 sudo -H pip install pyopenssl ndg-httpsclient pyasn1
 sudo -H pip install biopython
 
-#clone lesson repo
-cd ~
-git clone https://github.com/jbadomics/tnseq.git
+
