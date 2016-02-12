@@ -218,7 +218,7 @@ rev_read    16  chr1    11  42  20M *   0   0   TCCCGAGAAGGTCTGGTTTA    DDDDDDDD
 <p>First, create a data analysis directory:</p>
 <pre><code>cd ~/analysis
 </code></pre>
-<p>We'll use bowtie to map our Tn-seq reads and discard STDOUT since we're really only interested in the unmapped reads:</p>
+<p>We'll use bowtie to map our Tn-seq reads and discard STDOUT since we're really only interested in the unmapped reads (specified with <code>--un</code>):</p>
 <pre><code>bowtie-build ~/tnseq/reference/phiX.fasta phiX
 bowtie -q -p $(nproc --all) --un phiX_removed.fastq phiX ~/data/tnseq_reads.fastq &gt; /dev/null
 </code></pre>
