@@ -24,11 +24,10 @@ args=parser.parse_args()
 
 outputFileName = sys.argv[1].replace(".gbk", ".fasta")
 
-with open(sys.argv[1], 'r') as genbankFile:
-	for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
-		seqHeader = ''.join(sequenceRecord.id)
-		genomeSequence = str(sequenceRecord.seq)
-		print seqHeader, len(genomeSequence)
-		with open(outputFileName, 'wb') as outputFile:
+with open(outputFileName, 'wb') as outputFile:
+	with open(sys.argv[1], 'r') as genbankFile:
+		for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
+			seqHeader = ''.join(sequenceRecord.id)
+			genomeSequence = str(sequenceRecord.seq)
+			print seqHeader, len(genomeSequence)
 			SeqIO.write(sequenceRecord, outputFile, "fasta")
-
