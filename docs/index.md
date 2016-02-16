@@ -145,7 +145,7 @@ First, create a data analysis directory:
 
     cd ~/analysis
 
-We'll use bowtie to map our Tn-seq reads and discard STDOUT since we're really only interested in the unmapped reads:
+We'll use bowtie to map our Tn-seq reads and discard STDOUT since we're really only interested in the unmapped reads (specified with `--un`):
 
     bowtie-build ~/tnseq/reference/phiX.fasta phiX
     bowtie -q -p $(nproc --all) --un phiX_removed.fastq phiX ~/data/tnseq_reads.fastq > /dev/null
@@ -154,7 +154,7 @@ In this lesson I included a shell script called `countseq` which runs `bioawk` t
 
     countseq *.fastq
 
-### Remove transposon sequence, filter, and dereplicate
+### Remove transposon sequence, filter, and demultiplex
 
 Use `less` to have a look at the phiX-removed reads. You should see some patterns: are there multiple barcodes? Do you see any TA insertion sites? Do the 3' ends of the reads look similar?
 
