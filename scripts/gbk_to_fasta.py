@@ -17,7 +17,7 @@ warnings.simplefilter('ignore', BiopythonWarning)
 
 # script help and usage
 parser=argparse.ArgumentParser(
-    description='extracts full sequence record in FASTA format from a (multi)-Genbank file.',
+    description='extracts full nucleotide sequence record in FASTA format from a (multi)-Genbank file.',
     epilog='Author: Jon Badalamenti, Bond Lab, University of Minnesota (http://www.thebondlab.org)\nhttp://github.com/jbadomics/tnseq\nFebruary 2016\n \n', formatter_class=RawTextHelpFormatter)
 parser.add_argument('[GENBANK FILE]', help='Genbank file from which to extract genome sequence')
 args=parser.parse_args()
