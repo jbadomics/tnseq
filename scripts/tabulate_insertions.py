@@ -21,7 +21,7 @@ warnings.simplefilter('ignore', BiopythonWarning)
 # script help and usage
 parser=argparse.ArgumentParser(
     description='Given a tab-delimited file providing genomic coordinates of transposon insertions, this script\nparses a Genbank file and tabulates the total number of transposon insertions and insertion sites\nper locus tag. It also tabulates intergenic insertions and locus tags without any insertions. \n\nNOTE: Organisms with multiple Genbank records (e.g. those with multiple chromosomes or plasmids)\nshould be concatenated into a single .gbk file before executing this script. For example:\n% cat NC_000001.gbk NC_000002.gbk [...NC_00000n.gbk] > concatenated.gbk\n\nRequires BioPython v. 1.65 or later (http://biopython.org/wiki/Download)', 
-    epilog='Output columns for coding hits:\n1-SeqRecordID\n2-locus tag\n3-strand\n4-total transposon hits\n5-hits in TA sites\n6-hits in non-TA sites\n7-hittable TA sites\n8-percent TA sites hit\n9-reads per kpb\n10-product\n\nAuthor: Jon Badalamenti, Bond Lab, University of Minnesota (http://www.thebondlab.org)\nhttp://github.com/jbadomics/tnseq\nJanuary 2016\nupdated February 2016\n ', formatter_class=RawTextHelpFormatter)
+    epilog='Output columns for coding hits:\n1-SeqRecord ID\n2-feature type\n3-locus tag\n4-strand\n5-total transposon hits\n6-hits in TA sites\n7-hits in non-TA sites\n8-total # of hittable TA sites\n9-percentage of TA sites hit\n10-reads per kbp\n11-product\n\nAuthor: Jon Badalamenti, Bond Lab, University of Minnesota (http://www.thebondlab.org)\nhttp://github.com/jbadomics/tnseq\nJanuary 2016\nupdated February 2016\n ', formatter_class=RawTextHelpFormatter)
 parser.add_argument('[GENBANK FILE]', help='Genbank file containing, at a minimum, locus tags and corresponding genomic\ncoordinates')
 parser.add_argument('[DATA FILE]', help='insertion data as three-column tab-delimited file containing chromosome,\ngenomic coordinate, and total number of insertions at that coordinate, e.g.\nchr1\t327491\t1639')
 parser.add_argument('[prefix]', help='output file names will be prepended with this prefix')
@@ -146,15 +146,15 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 				# classify output into either TA site hits or non-TA site hits
 				if len(geneTAcoordinates) > 0:
 					hitPercent = (float(len(TAinsertionSites)) / len(geneTAcoordinates)) * 100
-					codingHits = "%s\t%s\t%s\t%i\t%s\t%i\t%i\t%2.1f\t%2.1f\t%s" % (''.join(sequenceRecord.id), locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent, readsPerKb, product)
+					codingHits = "%s\t%s\t%s\t%s\t%i\t%s\t%i\t%i\t%2.1f\t%2.1f\t%s" % (''.join(sequenceRecord.id), ''.join(feature.type), locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent, readsPerKb, product)
 				else:
 					hitPercent = '*'
-					codingHits = "%s\t%s\t%s\t%i\t%s\t%i\t%i\t%s\t%2.1f\t%s" % (''.join(sequenceRecord.id), locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent, readsPerKb, product)
+					codingHits = "%s\t%s\t%s\t%s\t%i\t%s\t%i\t%i\t%s\t%2.1f\t%s" % (''.join(sequenceRecord.id), ''.join(feature.type), locusTag, strandSign, sum(hits), len(TAinsertionSites), len(nonTAsites), len(geneTAcoordinates), hitPercent, readsPerKb, product)
 				outputFile.write(codingHits+"\n")
 			
 			if not hits:
 				print "no transposon insertions in %s\t%s" % (locusTag, product)
-				noHits = "%s\t%s" % (locusTag, product)
+				noHits = "%s\t%s\t%s\t%s" % (''.join(sequenceRecord.id), ''.join(feature.type), locusTag, product)
 				noHitsFile.write(noHits+"\n")
 	
 	print 'tabulating intergenic insertions in %s %s...\n' % (''.join(sequenceRecord.id), ''.join(sequenceRecord.description).rstrip('.').replace(', complete genome', ''))
