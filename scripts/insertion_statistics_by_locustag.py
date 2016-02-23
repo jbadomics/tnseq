@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 import os
 import csv
@@ -34,7 +35,7 @@ genbankFile = open(sys.argv[1], 'r')
 
 insertionEvents=[]
 
-print "reading insertion data..."
+print("reading insertion data...")
 # read insertion data into list
 with open(sys.argv[2], 'r') as f:
 	insertionPointsFile = csv.reader(f,delimiter='\t')	
@@ -46,7 +47,7 @@ NtermTrim = float(sys.argv[4])
 CtermTrim = float(sys.argv[5])
 
 outputFileName = "%s.insertions.txt" % sys.argv[3]
-outputFile = open(outputFileName, 'wb')
+outputFile = open(outputFileName, 'w')
 
 totalGenomeLength = []
 totalTAsites = []
@@ -85,7 +86,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					aaLength = len(''.join(feature.qualifiers["translation"]))
 					ntLength = aaLength * 3
 				else:
-					print '%s is not a protein coding sequence' % locusTag
+					print('%s is not a protein coding sequence' % locusTag)
 					ntLength = abs(int(feature.location.start.position) - int(feature.location.end.position))
 					aaLength = 0
 
@@ -102,7 +103,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					for n in re.finditer('TA', geneSequence):
 						geneTAcoordinates.append(n.end() + realStartCoord)
 					TAdensity = gene_TA_count / (float(realEndCoord - realStartCoord) / 1000)
-					print '%s %s\t%i..%i(+), %i nt, %i aa, %i TA sites, %2.1f TA sites/kbp\n' % (locusTag, product, startCoord, endCoord, ntLength, aaLength, gene_TA_count, TAdensity)
+					print('%s %s\t%i..%i(+), %i nt, %i aa, %i TA sites, %2.1f TA sites/kbp\n' % (locusTag, product, startCoord, endCoord, ntLength, aaLength, gene_TA_count, TAdensity))
 				
 				if strand == -1:
 					startCoord = int(feature.location.end.position) #this is not a typo - biopython defines start and end coordinates from left to right regardless of strandedness
@@ -117,7 +118,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 					for n in re.finditer('TA', geneSequence):
 						geneTAcoordinates.append(n.end() + realEndCoord)
 					TAdensity = gene_TA_count / (float(realStartCoord - realEndCoord) / 1000)
-					print '%s %s\t%i..%i(-), %i nt, %i aa, %i TA sites, %2.1f TA sites/kbp\n' % (locusTag, product, endCoord, startCoord, ntLength, aaLength, gene_TA_count, TAdensity)
+					print('%s %s\t%i..%i(-), %i nt, %i aa, %i TA sites, %2.1f TA sites/kbp\n' % (locusTag, product, endCoord, startCoord, ntLength, aaLength, gene_TA_count, TAdensity))
 
 	totalGoodSites = []
 	totalBadSites = []
@@ -144,7 +145,7 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 							totalBadSites.append(insertionCoord)
 							outputString = "%s\t%s\t%i\t%s\t*" % (chromosome, locusTag, insertionCoord, numHits)
 						if numHits:
-							print outputString
+							print(outputString)
 							outputFile.write(outputString+"\n")
 		
 			if strand == -1:
@@ -162,30 +163,30 @@ for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 							outputString = "%s\t%s\t%i\t%s\t*" % (chromosome, locusTag, insertionCoord, numHits)
 							totalBadSites.append(insertionCoord)
 						if numHits:
-							print outputString
+							print(outputString)
 							outputFile.write(outputString+"\n")
 
 		# print results for each possible outcome: 1) TA sites hit; 2) only non-TA sites hit; 3) no hits at all
 		if totalGoodSites:
-			print '%s (%i bp, %2.1f%% GC) contains %i total theoretical TA insertion sites' % (OrganismName, sum(totalGenomeLength), GC(genome), sum(totalTAsites))
-			print '%i total theoretical TA insertion sites are present in %s' % (gene_TA_count, locusTag)
-			print '%i of %i sites (%3.1f %%) in %s were hit' % (len(totalGoodSites), gene_TA_count, (len(totalGoodSites) / float(gene_TA_count)) * 100,locusTag)
-			print "insertion positions written to %s" % outputFileName
+			print('%s (%i bp, %2.1f%% GC) contains %i total theoretical TA insertion sites' % (OrganismName, sum(totalGenomeLength), GC(genome), sum(totalTAsites)))
+			print('%i total theoretical TA insertion sites are present in %s' % (gene_TA_count, locusTag))
+			print('%i of %i sites (%3.1f %%) in %s were hit' % (len(totalGoodSites), gene_TA_count, (len(totalGoodSites) / float(gene_TA_count)) * 100,locusTag))
+			print("insertion positions written to %s" % outputFileName)
 			sys.exit() # exit before looping over all sequence records
 		if totalBadSites and not totalGoodSites:
-			print '%i total theoretical TA insertion sites are present in %s' % (gene_TA_count, locusTag)
-			print 'insertions in %s occur only in non-TA sites' % locusTag
+			print('%i total theoretical TA insertion sites are present in %s' % (gene_TA_count, locusTag))
+			print('insertions in %s occur only in non-TA sites' % locusTag)
 			sys.exit() # exit before looping over all sequence records
 		if not totalGoodSites and not totalBadSites:
-			print "no transposon insertions found in %s" % locusTag
+			print("no transposon insertions found in %s" % locusTag)
 			sys.exit() # exit before looping over all sequence records
 		
 # raise error and exit script if provided locus tag does not exist
 try: matchedLocusTag
 except NameError: matchedLocusTag = None
 if matchedLocusTag == None:
-	print 'ERROR: %s does not exist in the provided genome' % locusTag
-	print 'check the locus tag and try again'
+	print('ERROR: %s does not exist in the provided genome' % locusTag)
+	print('check the locus tag and try again')
 	sys.exit()
 
 genbankFile.close()
