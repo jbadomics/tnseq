@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 import Bio
 from Bio import SeqIO, SeqFeature
@@ -24,10 +25,10 @@ args=parser.parse_args()
 
 outputFileName = sys.argv[1].replace(".gbk", ".fasta")
 
-with open(outputFileName, 'wb') as outputFile:
+with open(outputFileName, 'w') as outputFile:
 	with open(sys.argv[1], 'r') as genbankFile:
 		for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			seqHeader = ''.join(sequenceRecord.id)
 			genomeSequence = str(sequenceRecord.seq)
-			print seqHeader, len(genomeSequence)
+			print(seqHeader, len(genomeSequence))
 			SeqIO.write(sequenceRecord, outputFile, "fasta")
