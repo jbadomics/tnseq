@@ -16,6 +16,10 @@ from Bio import BiopythonWarning
 warnings.simplefilter('ignore', BiopythonParserWarning)
 warnings.simplefilter('ignore', BiopythonWarning)
 
+# Make file write mode compatible for Python 2 and Python 3
+writemode = 'wb' if sys.version_info < (3,) else 'w'
+
+
 # script help and usage
 parser=argparse.ArgumentParser(
     description='extracts full nucleotide sequence record in FASTA format from a (multi)-Genbank file.',
@@ -25,7 +29,7 @@ args=parser.parse_args()
 
 outputFileName = sys.argv[1].replace(".gbk", ".fasta")
 
-with open(outputFileName, 'w') as outputFile:
+with open(outputFileName, writemode) as outputFile:
 	with open(sys.argv[1], 'r') as genbankFile:
 		for sequenceRecord in SeqIO.parse(genbankFile, "genbank"):
 			seqHeader = ''.join(sequenceRecord.id)

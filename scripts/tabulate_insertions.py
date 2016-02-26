@@ -19,6 +19,9 @@ from Bio import BiopythonWarning
 warnings.simplefilter('ignore', BiopythonParserWarning)
 warnings.simplefilter('ignore', BiopythonWarning)
 
+# Make file write mode compatible for Python 2 and Python 3
+writemode = 'wb' if sys.version_info < (3,) else 'w'
+
 # script help and usage
 parser=argparse.ArgumentParser(
     description='Given a tab-delimited file providing genomic coordinates of transposon insertions, this script\nparses a Genbank file and tabulates the total number of transposon insertions and insertion sites\nper locus tag. It also tabulates intergenic insertions and locus tags without any insertions. \n\nNOTE: Organisms with multiple Genbank records (e.g. those with multiple chromosomes or plasmids)\nshould be concatenated into a single .gbk file before executing this script. For example:\n% cat NC_000001.gbk NC_000002.gbk [...NC_00000n.gbk] > concatenated.gbk\n\nRequires BioPython v. 1.65 or later (http://biopython.org/wiki/Download)',
@@ -44,13 +47,13 @@ print("done")
 print("tabulating insertions by locus tag...")
 
 outputFileName = "%s.tabulated_insertions.coding.txt" % sys.argv[3]
-outputFile = open(outputFileName, 'w')
+outputFile = open(outputFileName, writemode)
 
 noHitsFileName = "%s.nohits.txt" % sys.argv[3]
-noHitsFile = open(noHitsFileName, 'w')
+noHitsFile = open(noHitsFileName, writemode)
 
 intergenicHitsFileName = "%s.tabulated_insertions.intergenic.txt" % sys.argv[3]
-intergenicHitsFile = open(intergenicHitsFileName, 'w')
+intergenicHitsFile = open(intergenicHitsFileName, writemode)
 
 # define list of CDS coordinates for calculating intergenic regions
 CDS_list = [[0,0]]
